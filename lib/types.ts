@@ -23,7 +23,20 @@ export interface Company {
   pipelines: Pipeline[];
   issues: Issue[];
   memories: Memory[];
+  streamItems: StreamItem[];
+  todaySpend: number;
+  yesterdaySpend: number;
+  daysLeftInMonth?: number;
+  stagePills?: string[];
   keyMetric?: { label: string; value: string; sub?: string };
+}
+
+export interface StreamItem {
+  id: string;
+  agentLabel: string; // e.g. "DESIGN · OPUS"
+  action: string; // e.g. "thinking", "writing"
+  timeLabel: string; // e.g. "NOW", "2s", "4m"
+  body: string; // may include <code>…</code> spans
 }
 
 export interface Agent {
