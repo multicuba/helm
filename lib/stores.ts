@@ -116,3 +116,16 @@ export const useTourStore = create<TourState>((set) => ({
   startTour: (id) => set({ activeTour: id }),
   endTour: () => set({ activeTour: null }),
 }));
+
+// ───── Command palette (⌘K) ─────
+interface CommandPaletteState {
+  open: boolean;
+  setOpen: (v: boolean) => void;
+  toggle: () => void;
+}
+
+export const useCommandPalette = create<CommandPaletteState>((set) => ({
+  open: false,
+  setOpen: (v) => set({ open: v }),
+  toggle: () => set((s) => ({ open: !s.open })),
+}));

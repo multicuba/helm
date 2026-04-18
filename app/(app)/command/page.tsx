@@ -1,6 +1,6 @@
 "use client";
 
-import { useWorkspaceStore, useCompaniesStore } from "@/lib/stores";
+import { useWorkspaceStore, useCompaniesStore, useApprovalsStore } from "@/lib/stores";
 import { CompanyCard } from "@/components/command-center/CompanyCard";
 import { StatsBar } from "@/components/command-center/StatsBar";
 import { ActivityFeed } from "@/components/command-center/ActivityFeed";
@@ -11,8 +11,13 @@ import { format } from "date-fns";
 export default function CommandCenterPage() {
   const user = useWorkspaceStore((s) => s.user);
   const companies = useCompaniesStore((s) => s.companies);
+  const approvals = useApprovalsStore((s) => s.approvals);
 
   const today = new Date();
+  const agentsWorking = companies.reduce(
+    (n, c) => n + c.agents.filter((a) => a.status === "working").length,
+    0
+  );
 
   return (
     <div className="px-8 py-9 max-w-[1400px] mx-auto">
@@ -29,7 +34,7 @@ export default function CommandCenterPage() {
           </em>
         </h1>
         <div className="text-mono-meta">
-          {format(today, "EEEE · MMMM d, yyyy")} · {companies.length} companies · 23 agents active · 4 pending approvals
+          {format(today, "EEEE · MMMM d, yyyy")} · {companies.length} companies · {agentsWorking} agents active · {approvals.length} pending approval{approvals.length === 1 ? "" : "s"}
         </div>
       </motion.div>
 
@@ -41,7 +46,7 @@ export default function CommandCenterPage() {
       </div>
 
       <div className="grid grid-cols-3 gap-4 mb-10">
-        {companies.slice(0, 3).map((c, i) => (
+        {companies.map((c, i) => (
           <motion.div
             key={c.id}
             initial={{ opacity: 0, y: 10 }}
