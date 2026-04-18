@@ -184,3 +184,25 @@ export interface Attachment {
   fileName: string;
   sizeLabel: string;
 }
+
+export interface AgentRole {
+  id: string;
+  name: string;
+  model: string;
+  meta: string;
+  colorHex: string;
+}
+
+export interface PRDSection {
+  id: string;
+  label: string;
+  status: "done" | "in-progress" | "pending";
+}
+
+export interface InspirationCard {
+  id: string;
+  title: string;
+  subtitle: string;
+  sourceUrl: string;
+  tag: string;
+}
