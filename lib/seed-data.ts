@@ -4,6 +4,9 @@ import type {
   ActivityEntry,
   Thread,
   Agent,
+  AgentRole,
+  PRDSection,
+  InspirationCard,
   Human,
   Pipeline,
   Issue,
@@ -713,7 +716,7 @@ export const seedThreads: Thread[] = [
         id: "m1",
         role: "assistant",
         content:
-          "¿Qué estás tratando de construir — y para quién duele tanto este problema que lo pagarían hoy?",
+          "Hola, soy el Interview Agent. Vamos a convertir una idea en una empresa lista para ejecutar. Respondé crudo, como a un socio.\n\n¿Qué estás tratando de construir — y para quién duele tanto este problema que lo pagarían hoy?",
         timestamp: "2026-04-18T11:42:00Z",
       },
       {
@@ -753,4 +756,324 @@ export const seedThreads: Thread[] = [
     updatedAt: "2026-04-18T11:43:30Z",
     totalCost: 0.34,
   },
+  {
+    id: "t-mh-pricing",
+    title: "MH pricing calc",
+    role: "strategy",
+    messages: [],
+    createdAt: "2026-04-17T16:20:00Z",
+    updatedAt: "2026-04-17T16:55:00Z",
+    totalCost: 0.18,
+  },
+  {
+    id: "t-trading-journal",
+    title: "Trading journal v3",
+    role: "architect",
+    messages: [],
+    createdAt: "2026-04-15T09:00:00Z",
+    updatedAt: "2026-04-16T14:10:00Z",
+    totalCost: 0.52,
+  },
+  {
+    id: "t-dock-pilings",
+    title: "Dock pilings Q&A",
+    role: "interview",
+    messages: [],
+    createdAt: "2026-04-13T11:45:00Z",
+    updatedAt: "2026-04-13T12:10:00Z",
+    totalCost: 0.09,
+  },
+  {
+    id: "t-bryan-roadmap",
+    title: "Bryan AI roadmap",
+    role: "strategy",
+    messages: [],
+    createdAt: "2026-04-10T10:15:00Z",
+    updatedAt: "2026-04-12T17:40:00Z",
+    totalCost: 0.71,
+  },
 ];
+
+// ───── Roles (chat sidebar) ─────
+export const seedRoles: AgentRole[] = [
+  {
+    id: "interview",
+    name: "Interview Agent",
+    model: "Opus 4.7",
+    meta: "bilingual",
+    colorHex: "#c89b5e",
+  },
+  {
+    id: "strategy",
+    name: "Strategy Advisor",
+    model: "Opus 4.7",
+    meta: "market · positioning",
+    colorHex: "#4a7a82",
+  },
+  {
+    id: "architect",
+    name: "Technical Architect",
+    model: "Sonnet · GPT-5.4",
+    meta: "stack · tradeoffs",
+    colorHex: "#7ba05b",
+  },
+  {
+    id: "reviewer",
+    name: "QA Reviewer",
+    model: "Codex · Playwright",
+    meta: "testable · edge cases",
+    colorHex: "#d4a23e",
+  },
+];
+
+// ───── PRD draft progress (right panel) ─────
+export const seedPRDDraft: PRDSection[] = [
+  { id: "problem", label: "Problem statement", status: "done" },
+  { id: "users", label: "Target users", status: "done" },
+  { id: "metrics", label: "Success metrics", status: "in-progress" },
+  { id: "competitive", label: "Competitive landscape", status: "pending" },
+  { id: "tech", label: "Tech requirements", status: "pending" },
+];
+
+// ───── Inspiration cards (right panel) ─────
+export const seedInspiration: InspirationCard[] = [
+  {
+    id: "insp-1",
+    title: "Mercado Libre logistics",
+    subtitle: "Real-time fleet visibility · route optimization at LATAM scale",
+    sourceUrl: "envios.mercadolibre.com",
+    tag: "Logistics",
+  },
+  {
+    id: "insp-2",
+    title: "Tesla Supercharger Map",
+    subtitle: "Live availability · queue time · trip planner baseline",
+    sourceUrl: "tesla.com/findus",
+    tag: "Reference UX",
+  },
+];
+
+// ───── Interview Agent ghost messages (demo mode) ─────
+export const interviewGhostMessages: string[] = [
+  "Una pregunta más antes de firmar el PRD: ¿cómo monetizás? ¿suscripción a dueños de EV, revenue share con Charge2Go, o data-as-a-service a fleets?",
+  "Pensando en modo negocio: ¿qué pasaría si Tesla lanza la misma feature en 6 semanas? ¿Tu ventaja aguanta o necesitamos pivote?",
+  "Te escuché. Antes de cerrar, ¿hay un guardrail no-negociable? ej: no vender ubicación, no push notifications agresivas, no dark patterns.",
+];
+
+// ───── EV Station Finder Company seed (built on Convert) ─────
+export function buildEVStationFinderCompany(): Company {
+  const discoveryPipeline: Pipeline = {
+    id: "p-evsf-discovery",
+    featureName: "Discovery — Florida EV owner research",
+    startedAt: "2026-04-18T12:00:00Z",
+    ownerAgentId: "evsf-ceo",
+    currentPhaseIndex: 1,
+    progressPercent: 18,
+    phases: [
+      { name: "explore", displayName: "Explore", status: "done", assignedLabel: "CEO", durationLabel: "✓ 4m" },
+      { name: "propose", displayName: "Propose", status: "active", assignedLabel: "CEO", durationLabel: "● running" },
+      { name: "spec", displayName: "Spec", status: "pending", assignedLabel: "Arch", durationLabel: "queued" },
+      { name: "design", displayName: "Design", status: "pending", assignedLabel: "Opus", durationLabel: "—" },
+      { name: "implement", displayName: "Implement", status: "pending", assignedLabel: "FE + BE", durationLabel: "—" },
+      { name: "verify", displayName: "Verify", status: "pending", assignedLabel: "QA", durationLabel: "—" },
+      { name: "archive", displayName: "Archive", status: "pending", assignedLabel: "Docs", durationLabel: "—" },
+    ],
+  };
+
+  const mvpPipeline: Pipeline = {
+    id: "p-evsf-mvp",
+    featureName: "MVP — Map + range calc + live availability",
+    startedAt: "2026-04-18T12:00:00Z",
+    ownerAgentId: "evsf-fe",
+    currentPhaseIndex: 0,
+    progressPercent: 4,
+    phases: [
+      { name: "explore", displayName: "Explore", status: "active", assignedLabel: "FE", durationLabel: "● starting" },
+      { name: "propose", displayName: "Propose", status: "pending", assignedLabel: "FE", durationLabel: "queued" },
+      { name: "spec", displayName: "Spec", status: "pending", assignedLabel: "Arch", durationLabel: "—" },
+      { name: "design", displayName: "Design", status: "pending", assignedLabel: "Opus", durationLabel: "—" },
+      { name: "implement", displayName: "Implement", status: "pending", assignedLabel: "FE + BE", durationLabel: "—" },
+      { name: "verify", displayName: "Verify", status: "pending", assignedLabel: "QA", durationLabel: "—" },
+      { name: "archive", displayName: "Archive", status: "pending", assignedLabel: "Docs", durationLabel: "—" },
+    ],
+  };
+
+  const launchPipeline: Pipeline = {
+    id: "p-evsf-launch",
+    featureName: "Launch — App store, PWA install, onboarding",
+    startedAt: "2026-04-18T12:00:00Z",
+    ownerAgentId: "evsf-ceo",
+    currentPhaseIndex: 0,
+    progressPercent: 0,
+    phases: [
+      { name: "explore", displayName: "Explore", status: "pending", assignedLabel: "CEO", durationLabel: "scheduled" },
+      { name: "propose", displayName: "Propose", status: "pending", assignedLabel: "CEO", durationLabel: "—" },
+      { name: "spec", displayName: "Spec", status: "pending", assignedLabel: "Arch", durationLabel: "—" },
+      { name: "design", displayName: "Design", status: "pending", assignedLabel: "Opus", durationLabel: "—" },
+      { name: "implement", displayName: "Implement", status: "pending", assignedLabel: "FE", durationLabel: "—" },
+      { name: "verify", displayName: "Verify", status: "pending", assignedLabel: "QA", durationLabel: "—" },
+      { name: "archive", displayName: "Archive", status: "pending", assignedLabel: "Docs", durationLabel: "—" },
+    ],
+  };
+
+  const issues: Issue[] = [
+    {
+      id: "evsf-001",
+      code: "EVSF-001",
+      title: "Research: Florida EV owner pain points",
+      subtitle: "Discovery · 10 interviews target · ES + EN",
+      description: "Surface top 3 unmet needs for range anxiety on long FL routes.",
+      status: "in-progress",
+      assigneeLabel: "CEO",
+      assigneeColor: "brass",
+      pipelineId: "p-evsf-discovery",
+      costSoFar: 0.04,
+      createdAt: "2026-04-18T12:00:00Z",
+    },
+    {
+      id: "evsf-002",
+      code: "EVSF-002",
+      title: "Integrate Charge2Go live availability API",
+      subtitle: "MVP · backend · auth + rate limits",
+      description: "Connect internal Charge2Go feed with per-station availability.",
+      status: "queued",
+      assigneeLabel: "BE",
+      assigneeColor: "teal",
+      pipelineId: "p-evsf-mvp",
+      costSoFar: 0,
+      createdAt: "2026-04-18T12:00:00Z",
+    },
+    {
+      id: "evsf-003",
+      code: "EVSF-003",
+      title: "Weather + elevation-aware range estimator",
+      subtitle: "Core differentiator · physics model",
+      description: "Adjust remaining range using NOAA wind + 10m elevation DEM.",
+      status: "queued",
+      assigneeLabel: "BE",
+      assigneeColor: "teal",
+      pipelineId: "p-evsf-mvp",
+      costSoFar: 0,
+      createdAt: "2026-04-18T12:00:00Z",
+    },
+    {
+      id: "evsf-004",
+      code: "EVSF-004",
+      title: "Map view with live charger pins",
+      subtitle: "Mapbox · color-coded availability",
+      description: "Mobile-first map with clustering + charger detail sheet.",
+      status: "queued",
+      assigneeLabel: "FE",
+      assigneeColor: "teal",
+      pipelineId: "p-evsf-mvp",
+      costSoFar: 0,
+      createdAt: "2026-04-18T12:00:00Z",
+    },
+    {
+      id: "evsf-005",
+      code: "EVSF-005",
+      title: "PWA shell + install prompt",
+      subtitle: "Launch · offline map cache",
+      description: "Service worker + manifest + install UX.",
+      status: "queued",
+      assigneeLabel: "FE",
+      assigneeColor: "teal",
+      pipelineId: "p-evsf-launch",
+      costSoFar: 0,
+      createdAt: "2026-04-18T12:00:00Z",
+    },
+    {
+      id: "evsf-006",
+      code: "EVSF-006",
+      title: "Onboarding: select your EV model",
+      subtitle: "Pre-populate battery curve per model",
+      description: "Model picker → battery profile → personalized range UX.",
+      status: "queued",
+      assigneeLabel: "FE",
+      assigneeColor: "teal",
+      pipelineId: "p-evsf-launch",
+      costSoFar: 0,
+      createdAt: "2026-04-18T12:00:00Z",
+    },
+    {
+      id: "evsf-007",
+      code: "EVSF-007",
+      title: "E2E test harness: Miami → Orlando trip",
+      subtitle: "Playwright · mock GPS · edge-case coverage",
+      description: "Automated trip sim with dead-battery and reroute paths.",
+      status: "queued",
+      assigneeLabel: "QA",
+      assigneeColor: "danger",
+      pipelineId: "p-evsf-mvp",
+      costSoFar: 0,
+      createdAt: "2026-04-18T12:00:00Z",
+    },
+    {
+      id: "evsf-008",
+      code: "EVSF-008",
+      title: "SEO landing: florida-ev-charger-map",
+      subtitle: "ES + EN · structured data · long-tail",
+      description: "Static SEO surface to drive acquisition.",
+      status: "queued",
+      assigneeLabel: "SEO",
+      assigneeColor: "teal",
+      pipelineId: "p-evsf-launch",
+      costSoFar: 0,
+      createdAt: "2026-04-18T12:00:00Z",
+    },
+  ];
+
+  const streamItems: StreamItem[] = [
+    {
+      id: "evsf-s-1",
+      agentLabel: "CEO · OPUS",
+      action: "provisioning",
+      timeLabel: "NOW",
+      body: "Context graph seeded from <code>t-ev-finder</code> · 47 memories linked from Charge2Go",
+    },
+    {
+      id: "evsf-s-2",
+      agentLabel: "FE · SONNET",
+      action: "scaffolding",
+      timeLabel: "2s",
+      body: "Generating <code>app/(map)</code> route group + PWA manifest",
+    },
+    {
+      id: "evsf-s-3",
+      agentLabel: "BE · GPT-5.4",
+      action: "planning",
+      timeLabel: "8s",
+      body: "Drafting physics-aware range calc spec · weather API shortlist",
+    },
+  ];
+
+  return {
+    id: "ev-station-finder",
+    name: "EV Station Finder",
+    slug: "ev-station-finder",
+    colorHex: "#c89b5e",
+    industry: "EV · Mobile",
+    status: "active",
+    monthlyBudget: 500,
+    monthlySpendMtd: 0,
+    openTickets: issues.filter((i) => i.status !== "done").length,
+    closedTickets: 0,
+    activePipelines: 3,
+    agents: [
+      mkCEO("evsf-ceo"),
+      mkFrontend("evsf-fe"),
+      mkBackend("evsf-be"),
+      mkQA("evsf-qa"),
+    ],
+    humans: [daniel],
+    pipelines: [discoveryPipeline, mvpPipeline, launchPipeline],
+    issues,
+    memories: [],
+    streamItems,
+    todaySpend: 0.04,
+    yesterdaySpend: 0,
+    daysLeftInMonth: 12,
+    stagePills: ["EV · Mobile", "Just created", "Charge2Go sub-product"],
+    keyMetric: { label: "PRD confidence", value: "94%", sub: "auto-generated" },
+  };
+}
