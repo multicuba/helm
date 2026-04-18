@@ -1,0 +1,3551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Helm — Concept Mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=Inter+Tight:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #0c0a08;
+    --bg-page: #110f0c;
+    --bg-surface: #1a1713;
+    --bg-surface-2: #221e18;
+    --bg-elevated: #2a241d;
+    --border-subtle: #2a241d;
+    --border-strong: #3a3228;
+    --text-primary: #f5efe4;
+    --text-secondary: #a89f91;
+    --text-tertiary: #6b6358;
+    --text-dim: #4a433a;
+    --brass: #c89b5e;
+    --brass-bright: #e5b87a;
+    --brass-muted: #8a6d43;
+    --brass-deep: #3d2f1c;
+    --teal: #4a7a82;
+    --teal-muted: #2d4a52;
+    --success: #7ba05b;
+    --warning: #d4a23e;
+    --danger: #c26b55;
+    --danger-muted: #6b3a2e;
+    --serif: 'Fraunces', 'Times New Roman', serif;
+    --sans: 'Inter Tight', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.01em;
+  }
+
+  body {
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(200, 155, 94, 0.04), transparent 40%),
+      radial-gradient(circle at 85% 80%, rgba(74, 122, 130, 0.03), transparent 40%);
+    min-height: 100vh;
+    padding: 60px 20px 120px;
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.4;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.3'/%3E%3C/svg%3E");
+    z-index: 1000;
+  }
+
+  .page-wrapper {
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+
+  .intro {
+    max-width: 680px;
+    margin: 0 auto 80px;
+    padding: 0 20px;
+    text-align: center;
+  }
+
+  .intro-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--brass);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    padding: 6px 12px;
+    border: 1px solid var(--brass-deep);
+    border-radius: 2px;
+  }
+
+  .intro-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--brass);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--brass);
+  }
+
+  .intro h1 {
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: 64px;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    color: var(--text-primary);
+    margin-bottom: 20px;
+  }
+
+  .intro h1 em {
+    font-style: italic;
+    color: var(--brass);
+    font-weight: 400;
+  }
+
+  .intro p {
+    color: var(--text-secondary);
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  .frame-label {
+    max-width: 1360px;
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 4px;
+  }
+
+  .frame-label-text {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+
+  .frame-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+  }
+
+  .frame-title {
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 400;
+    font-style: italic;
+    color: var(--text-primary);
+  }
+
+  .frame-desc {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+    letter-spacing: 0.02em;
+  }
+
+  .frame {
+    max-width: 1360px;
+    margin: 0 auto 100px;
+    background: var(--bg-page);
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow:
+      0 1px 0 rgba(200, 155, 94, 0.05) inset,
+      0 40px 80px -20px rgba(0,0,0,0.6),
+      0 20px 40px -15px rgba(0,0,0,0.4);
+  }
+
+  /* Browser chrome */
+  .chrome {
+    background: var(--bg-deep);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .chrome-dots {
+    display: flex;
+    gap: 6px;
+  }
+
+  .chrome-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--border-strong);
+  }
+
+  .chrome-url {
+    flex: 1;
+    max-width: 400px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    padding: 5px 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-left: 20px;
+  }
+
+  .chrome-url span { color: var(--brass); }
+
+  /* ============ FRAME 1: COMMAND CENTER ============ */
+  .cc-container {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    min-height: 760px;
+    background: var(--bg-page);
+  }
+
+  .sidebar {
+    background: var(--bg-deep);
+    border-right: 1px solid var(--border-subtle);
+    padding: 20px 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .brand {
+    padding: 0 20px 28px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border-subtle);
+    margin-bottom: 20px;
+  }
+
+  .brand-mark {
+    width: 28px;
+    height: 28px;
+    border: 1.5px solid var(--brass);
+    border-radius: 50%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .brand-mark::before, .brand-mark::after {
+    content: '';
+    position: absolute;
+    background: var(--brass);
+  }
+
+  .brand-mark::before {
+    width: 1.5px;
+    height: 20px;
+    top: 2px;
+  }
+
+  .brand-mark::after {
+    width: 20px;
+    height: 1.5px;
+    left: 2px;
+  }
+
+  .brand-name {
+    font-family: var(--serif);
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+
+  .sidebar-section {
+    padding: 0 14px 20px;
+  }
+
+  .sidebar-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding: 0 8px 8px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 8px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    position: relative;
+  }
+
+  .nav-item:hover { background: var(--bg-surface); color: var(--text-primary); }
+
+  .nav-item.active {
+    background: var(--bg-surface);
+    color: var(--text-primary);
+  }
+
+  .nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: -14px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: var(--brass);
+  }
+
+  .nav-icon {
+    width: 14px;
+    height: 14px;
+    opacity: 0.8;
+    flex-shrink: 0;
+  }
+
+  .company-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 8px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    justify-content: space-between;
+  }
+
+  .company-item:hover { background: var(--bg-surface); color: var(--text-primary); }
+
+  .company-item.active { background: var(--bg-surface); color: var(--text-primary); }
+
+  .company-item-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .company-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+  }
+
+  .company-count {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 16px 20px;
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--brass), var(--brass-muted));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--serif);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--bg-deep);
+  }
+
+  .user-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .user-name { font-size: 12px; color: var(--text-primary); }
+  .user-role { font-family: var(--mono); font-size: 10px; color: var(--text-dim); }
+
+  /* Main content */
+  .main {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .topbar {
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .breadcrumb {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+    letter-spacing: 0.05em;
+  }
+
+  .breadcrumb span { color: var(--brass); }
+
+  .topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .search-bar {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    padding: 6px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 260px;
+    font-size: 12px;
+    color: var(--text-tertiary);
+  }
+
+  .kbd {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 1px 5px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border-strong);
+    border-radius: 3px;
+    color: var(--text-tertiary);
+  }
+
+  .btn {
+    padding: 7px 14px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: var(--brass);
+    color: var(--bg-deep);
+  }
+
+  .btn-primary:hover { background: var(--brass-bright); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-secondary);
+    border-color: var(--border-strong);
+  }
+
+  .btn-ghost:hover { color: var(--text-primary); border-color: var(--brass-muted); }
+
+  .page-content {
+    flex: 1;
+    padding: 36px 32px;
+    overflow-y: auto;
+  }
+
+  .page-header {
+    margin-bottom: 32px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  .page-title {
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: 44px;
+    line-height: 1;
+    letter-spacing: -0.025em;
+    margin-bottom: 8px;
+  }
+
+  .page-title em {
+    font-style: italic;
+    color: var(--brass);
+  }
+
+  .page-subtitle {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-tertiary);
+    letter-spacing: 0.02em;
+  }
+
+  .quick-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border-subtle);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 36px;
+  }
+
+  .stat {
+    background: var(--bg-page);
+    padding: 20px 22px;
+  }
+
+  .stat-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+
+  .stat-value {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 32px;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+
+  .stat-change {
+    font-family: var(--mono);
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .stat-change.up { color: var(--success); }
+  .stat-change.neutral { color: var(--text-tertiary); }
+  .stat-change.warn { color: var(--warning); }
+
+  .section-title {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 400;
+    font-size: 20px;
+    margin-bottom: 4px;
+  }
+
+  .section-bar {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .section-hint {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+  }
+
+  .companies-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 40px;
+  }
+
+  .company-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 20px;
+    position: relative;
+    transition: border-color 0.15s;
+    cursor: pointer;
+  }
+
+  .company-card:hover { border-color: var(--brass-muted); }
+
+  .company-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .company-flag {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .company-flag-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+  }
+
+  .company-name {
+    font-family: var(--serif);
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  .company-status {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--text-tertiary);
+    padding: 3px 8px;
+    border: 1px solid var(--border-strong);
+    border-radius: 3px;
+  }
+
+  .company-status.active {
+    color: var(--success);
+    border-color: rgba(123, 160, 91, 0.3);
+    background: rgba(123, 160, 91, 0.06);
+  }
+
+  .company-status.attention {
+    color: var(--warning);
+    border-color: rgba(212, 162, 62, 0.3);
+    background: rgba(212, 162, 62, 0.06);
+  }
+
+  .company-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 20px;
+    margin-bottom: 18px;
+  }
+
+  .metric-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .metric-value {
+    font-family: var(--sans);
+    font-size: 15px;
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  .metric-value .sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-weight: 400;
+    margin-left: 4px;
+  }
+
+  .budget-bar {
+    height: 3px;
+    background: var(--bg-deep);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+
+  .budget-fill {
+    height: 100%;
+    background: var(--brass);
+    border-radius: 2px;
+  }
+
+  .budget-fill.warn { background: var(--warning); }
+
+  .company-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .agent-stack {
+    display: flex;
+    align-items: center;
+  }
+
+  .agent-chip {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--bg-surface);
+    background: var(--bg-elevated);
+    margin-left: -6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--brass);
+    font-weight: 600;
+  }
+
+  .agent-chip:first-child { margin-left: 0; }
+  .agent-chip.more { background: var(--brass-deep); color: var(--brass); }
+
+  .footer-stats {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .footer-stats span { color: var(--text-primary); }
+
+  /* Activity section */
+  .activity-row {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 24px;
+  }
+
+  .card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+  }
+
+  .card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .card-title {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 16px;
+    font-weight: 400;
+  }
+
+  .card-body {
+    padding: 8px 0;
+  }
+
+  .activity-item {
+    padding: 12px 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .activity-item:last-child { border-bottom: none; }
+
+  .activity-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--brass);
+    margin-top: 6px;
+    flex-shrink: 0;
+  }
+
+  .activity-dot.success { background: var(--success); }
+  .activity-dot.warn { background: var(--warning); }
+  .activity-dot.danger { background: var(--danger); }
+
+  .activity-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .activity-text {
+    font-size: 13px;
+    color: var(--text-primary);
+    margin-bottom: 3px;
+    line-height: 1.4;
+  }
+
+  .activity-text .agent-tag {
+    color: var(--brass);
+    font-weight: 500;
+  }
+
+  .activity-text .company-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+    background: var(--bg-deep);
+    padding: 1px 6px;
+    border-radius: 2px;
+    margin-left: 4px;
+  }
+
+  .activity-meta {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.02em;
+  }
+
+  .approval-item {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border-subtle);
+    cursor: pointer;
+  }
+
+  .approval-item:hover { background: rgba(200, 155, 94, 0.03); }
+
+  .approval-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  .approval-title {
+    font-size: 13px;
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  .approval-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--brass);
+    padding: 2px 7px;
+    border: 1px solid var(--brass-deep);
+    border-radius: 3px;
+  }
+
+  .approval-desc {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: 10px;
+    line-height: 1.5;
+  }
+
+  .approval-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .mini-btn {
+    padding: 4px 10px;
+    font-size: 11px;
+    border-radius: 3px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-weight: 500;
+    font-family: var(--sans);
+  }
+
+  .mini-btn.approve {
+    background: var(--success);
+    color: var(--bg-deep);
+  }
+
+  .mini-btn.reject {
+    background: transparent;
+    color: var(--danger);
+    border-color: var(--danger-muted);
+  }
+
+  .mini-btn.review {
+    background: transparent;
+    color: var(--text-secondary);
+    border-color: var(--border-strong);
+  }
+
+  /* ============ FRAME 2: INTERVIEW / HELM CHAT ============ */
+  .chat-container {
+    display: grid;
+    grid-template-columns: 240px 1fr 300px;
+    min-height: 780px;
+  }
+
+  .chat-main {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-page);
+  }
+
+  .chat-header {
+    padding: 20px 40px;
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 12px;
+    background: var(--brass-deep);
+    border: 1px solid var(--brass-muted);
+    border-radius: 20px;
+  }
+
+  .role-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--brass);
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(200, 155, 94, 0.7); }
+    50% { opacity: 0.6; box-shadow: 0 0 0 6px rgba(200, 155, 94, 0); }
+  }
+
+  .role-name {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 14px;
+    color: var(--brass-bright);
+  }
+
+  .role-meta {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-tertiary);
+    letter-spacing: 0.05em;
+  }
+
+  .chat-thread {
+    flex: 1;
+    overflow-y: auto;
+    padding: 40px 40px 24px;
+  }
+
+  .msg {
+    margin-bottom: 28px;
+    max-width: 700px;
+  }
+
+  .msg-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .msg-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--serif);
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .msg-avatar.ai {
+    background: transparent;
+    border: 1px solid var(--brass);
+    color: var(--brass);
+  }
+
+  .msg-avatar.user {
+    background: linear-gradient(135deg, var(--brass), var(--brass-muted));
+    color: var(--bg-deep);
+  }
+
+  .msg-name {
+    font-size: 13px;
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  .msg-time {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-left: auto;
+  }
+
+  .msg-body {
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--text-primary);
+    margin-left: 34px;
+  }
+
+  .msg-body p { margin-bottom: 12px; }
+  .msg-body p:last-child { margin-bottom: 0; }
+
+  .msg-body .question {
+    font-family: var(--serif);
+    font-size: 19px;
+    font-style: italic;
+    font-weight: 400;
+    color: var(--text-primary);
+    line-height: 1.4;
+    letter-spacing: -0.01em;
+  }
+
+  .attachment-row {
+    margin-left: 34px;
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .attachment {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+  }
+
+  .att-icon {
+    width: 32px;
+    height: 40px;
+    background: var(--danger-muted);
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--danger);
+    font-weight: 600;
+  }
+
+  .att-icon.img {
+    background: var(--teal-muted);
+    color: var(--teal);
+  }
+
+  .att-info {
+    line-height: 1.3;
+  }
+
+  .att-name {
+    font-size: 12px;
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  .att-size {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .suggestion-row {
+    margin-left: 34px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .suggestion {
+    padding: 6px 12px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+
+  .suggestion:hover {
+    border-color: var(--brass);
+    color: var(--brass);
+  }
+
+  /* PRD preview card */
+  .prd-preview {
+    margin-left: 34px;
+    margin-top: 16px;
+    background: var(--bg-surface);
+    border: 1px solid var(--brass-deep);
+    border-radius: 6px;
+    overflow: hidden;
+    max-width: 580px;
+  }
+
+  .prd-head {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .prd-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--brass);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .prd-body {
+    padding: 18px;
+  }
+
+  .prd-title {
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+
+  .prd-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 18px;
+  }
+
+  .prd-specs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 20px;
+    margin-bottom: 18px;
+  }
+
+  .prd-spec-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 3px;
+  }
+
+  .prd-spec-value {
+    font-size: 13px;
+    color: var(--text-primary);
+  }
+
+  .prd-spec-value .stack-pill {
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--brass-deep);
+    border: 1px solid var(--brass-muted);
+    border-radius: 3px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--brass-bright);
+    margin-right: 4px;
+  }
+
+  .prd-cta-row {
+    display: flex;
+    gap: 8px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  /* Input area */
+  .chat-input {
+    padding: 20px 40px 28px;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .input-wrap {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    padding: 14px 16px 10px;
+    transition: border-color 0.15s;
+  }
+
+  .input-wrap:focus-within { border-color: var(--brass-muted); }
+
+  .input-textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-family: var(--sans);
+    font-size: 14px;
+    resize: none;
+    line-height: 1.5;
+    min-height: 20px;
+  }
+
+  .input-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 12px;
+  }
+
+  .input-tools {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .tool-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tool-btn:hover {
+    background: var(--bg-elevated);
+    color: var(--brass);
+  }
+
+  .input-hint {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .input-send {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Right panel: Context Stack */
+  .context-panel {
+    background: var(--bg-deep);
+    border-left: 1px solid var(--border-subtle);
+    padding: 24px 20px;
+    overflow-y: auto;
+  }
+
+  .ctx-section {
+    margin-bottom: 28px;
+  }
+
+  .ctx-head {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .ctx-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 12px;
+  }
+
+  .ctx-check {
+    width: 14px;
+    height: 14px;
+    border: 1px solid var(--brass);
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 2px;
+    position: relative;
+  }
+
+  .ctx-check.done { background: var(--brass); }
+  .ctx-check.done::after {
+    content: '';
+    position: absolute;
+    left: 3px;
+    top: 1px;
+    width: 4px;
+    height: 7px;
+    border: 1.5px solid var(--bg-deep);
+    border-top: 0;
+    border-left: 0;
+    transform: rotate(45deg);
+  }
+
+  .ctx-check.pending { border-color: var(--text-dim); }
+
+  .ctx-label {
+    color: var(--text-primary);
+    line-height: 1.4;
+  }
+
+  .ctx-label.pending { color: var(--text-tertiary); }
+
+  .skill-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 3px;
+    margin: 0 4px 6px 0;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-secondary);
+  }
+
+  .skill-chip-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--success);
+  }
+
+  /* ============ FRAME 3: COMPANY DETAIL ============ */
+  .company-detail {
+    display: grid;
+    grid-template-columns: 280px 1fr 320px;
+    min-height: 820px;
+  }
+
+  .co-sidebar {
+    background: var(--bg-deep);
+    border-right: 1px solid var(--border-subtle);
+    padding: 24px 20px;
+  }
+
+  .co-header-area {
+    margin-bottom: 28px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .co-back {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
+    margin-bottom: 14px;
+  }
+
+  .co-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .co-logo-mark {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, var(--danger), var(--danger-muted));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--serif);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--bg-deep);
+  }
+
+  .co-title {
+    font-family: var(--serif);
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+
+  .co-slug {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  .co-pill-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .co-pill {
+    padding: 3px 8px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 3px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-secondary);
+  }
+
+  /* Org Chart */
+  .org-section {
+    margin-bottom: 24px;
+  }
+
+  .org-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .org-add {
+    color: var(--brass);
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .agent-tree {
+    position: relative;
+  }
+
+  .agent-node {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .agent-node:hover { background: var(--bg-surface); }
+
+  .agent-node.active {
+    background: var(--bg-surface);
+    border: 1px solid var(--brass-deep);
+  }
+
+  .agent-node.indent { padding-left: 26px; }
+  .agent-node.indent::before {
+    content: '';
+    position: absolute;
+    left: 16px;
+    top: 0;
+    bottom: 50%;
+    width: 1px;
+    background: var(--border-strong);
+  }
+
+  .agent-node.indent::after {
+    content: '';
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    width: 8px;
+    height: 1px;
+    background: var(--border-strong);
+  }
+
+  .agent-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 600;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .agent-avatar::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    right: -1px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 2px solid var(--bg-deep);
+  }
+
+  .agent-avatar.working::after { background: var(--success); }
+  .agent-avatar.idle::after { background: var(--text-dim); }
+  .agent-avatar.blocked::after { background: var(--danger); }
+
+  .agent-avatar.ceo { background: var(--brass); color: var(--bg-deep); }
+  .agent-avatar.dev { background: var(--teal-muted); color: var(--teal); }
+  .agent-avatar.qa { background: var(--danger-muted); color: var(--danger); }
+  .agent-avatar.ops { background: rgba(123, 160, 91, 0.2); color: var(--success); }
+  .agent-avatar.sec { background: rgba(212, 162, 62, 0.15); color: var(--warning); }
+  .agent-avatar.seo { background: rgba(74, 122, 130, 0.15); color: var(--teal); }
+
+  .agent-info { flex: 1; min-width: 0; }
+
+  .agent-title-line {
+    font-size: 12px;
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  .agent-model {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .agent-cost {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-tertiary);
+    text-align: right;
+  }
+
+  /* Pipeline main */
+  .co-main {
+    padding: 24px 28px;
+    overflow-y: auto;
+    background: var(--bg-page);
+  }
+
+  .co-main-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .pipeline-title {
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: 36px;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+  }
+
+  .pipeline-title em { font-style: italic; color: var(--brass); }
+
+  .pipeline-sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-bottom: 24px;
+    margin-top: 4px;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border-subtle);
+    margin-bottom: 24px;
+  }
+
+  .tab {
+    padding: 10px 16px 12px;
+    font-size: 13px;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    font-family: var(--sans);
+    background: transparent;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+  }
+
+  .tab.active {
+    color: var(--text-primary);
+    border-bottom-color: var(--brass);
+  }
+
+  .tab-count {
+    margin-left: 6px;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 1px 6px;
+    background: var(--bg-surface);
+    border-radius: 10px;
+    color: var(--text-tertiary);
+  }
+
+  /* SDD Pipeline visualization */
+  .sdd-pipeline {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 28px 24px 24px;
+    margin-bottom: 28px;
+  }
+
+  .sdd-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .sdd-feature-name {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 18px;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .sdd-feature-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+  }
+
+  .sdd-progress {
+    text-align: right;
+  }
+
+  .sdd-progress-bar {
+    width: 120px;
+    height: 4px;
+    background: var(--bg-deep);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+
+  .sdd-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--brass), var(--brass-bright));
+    width: 55%;
+  }
+
+  .sdd-progress-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-tertiary);
+  }
+
+  .sdd-phases {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    position: relative;
+  }
+
+  .sdd-phase {
+    position: relative;
+    padding: 14px 10px;
+    background: var(--bg-page);
+    border: 1px solid var(--border-subtle);
+    border-radius: 5px;
+    min-height: 110px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sdd-phase.done {
+    background: rgba(123, 160, 91, 0.06);
+    border-color: rgba(123, 160, 91, 0.3);
+  }
+
+  .sdd-phase.active {
+    border-color: var(--brass);
+    background: rgba(200, 155, 94, 0.06);
+    box-shadow: 0 0 0 3px rgba(200, 155, 94, 0.08);
+  }
+
+  .sdd-phase.blocked {
+    border-color: var(--danger-muted);
+    background: rgba(194, 107, 85, 0.04);
+  }
+
+  .phase-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+  }
+
+  .sdd-phase.done .phase-num { color: var(--success); }
+  .sdd-phase.active .phase-num { color: var(--brass); }
+
+  .phase-name {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+  }
+
+  .phase-agent {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-tertiary);
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .phase-agent-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  .sdd-phase.done .phase-agent-dot { background: var(--success); }
+  .sdd-phase.active .phase-agent-dot { background: var(--brass); animation: pulse 2s ease-in-out infinite; }
+  .sdd-phase.pending .phase-agent-dot { background: var(--text-dim); }
+  .sdd-phase.blocked .phase-agent-dot { background: var(--danger); }
+
+  .phase-status {
+    font-family: var(--mono);
+    font-size: 10px;
+    margin-top: 4px;
+  }
+
+  .phase-status.done { color: var(--success); }
+  .phase-status.active { color: var(--brass); }
+  .phase-status.pending { color: var(--text-dim); }
+  .phase-status.blocked { color: var(--danger); }
+
+  /* Issue list */
+  .issue-list {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .issue-item {
+    padding: 14px 20px;
+    display: grid;
+    grid-template-columns: auto 1fr auto auto auto;
+    gap: 16px;
+    align-items: center;
+    border-bottom: 1px solid var(--border-subtle);
+    cursor: pointer;
+  }
+
+  .issue-item:last-child { border-bottom: none; }
+  .issue-item:hover { background: rgba(200, 155, 94, 0.03); }
+
+  .issue-id {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
+  }
+
+  .issue-title {
+    font-size: 13px;
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  .issue-sub {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+  }
+
+  .issue-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    border: 1px solid var(--border-strong);
+    color: var(--text-secondary);
+  }
+
+  .issue-tag.in-progress {
+    color: var(--brass);
+    border-color: var(--brass-deep);
+    background: rgba(200, 155, 94, 0.05);
+  }
+
+  .issue-tag.review {
+    color: var(--warning);
+    border-color: rgba(212, 162, 62, 0.3);
+    background: rgba(212, 162, 62, 0.05);
+  }
+
+  .issue-tag.blocked {
+    color: var(--danger);
+    border-color: var(--danger-muted);
+    background: rgba(194, 107, 85, 0.05);
+  }
+
+  .issue-tag.done {
+    color: var(--success);
+    border-color: rgba(123, 160, 91, 0.3);
+    background: rgba(123, 160, 91, 0.05);
+  }
+
+  .issue-assignee {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 600;
+  }
+
+  /* Right panel: live activity */
+  .live-panel {
+    background: var(--bg-deep);
+    border-left: 1px solid var(--border-subtle);
+    padding: 24px 20px;
+    overflow-y: auto;
+  }
+
+  .live-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .live-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .live-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--success);
+  }
+
+  .live-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--success);
+    border-radius: 50%;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  .stream-item {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .stream-item:last-child { border-bottom: none; }
+
+  .stream-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .stream-agent {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--brass);
+    letter-spacing: 0.05em;
+  }
+
+  .stream-action {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .stream-time {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-dim);
+  }
+
+  .stream-body {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    padding-left: 0;
+  }
+
+  .stream-body code {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--brass);
+    background: var(--bg-surface);
+    padding: 1px 5px;
+    border-radius: 2px;
+  }
+
+  .cost-preview {
+    margin-top: 20px;
+    padding: 14px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 5px;
+  }
+
+  .cost-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .cost-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .cost-period {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-tertiary);
+  }
+
+  .cost-val {
+    font-family: var(--serif);
+    font-size: 24px;
+    font-weight: 400;
+    margin-bottom: 4px;
+  }
+
+  .cost-vs {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-tertiary);
+  }
+
+  .cost-bar {
+    height: 3px;
+    background: var(--bg-deep);
+    border-radius: 2px;
+    margin-top: 10px;
+    overflow: hidden;
+  }
+
+  .cost-bar-fill {
+    height: 100%;
+    background: var(--brass);
+    width: 38%;
+  }
+
+  /* ============ FRAME 4: MOBILE APPROVAL ============ */
+  .mobile-frame {
+    max-width: 1200px;
+    margin: 0 auto 100px;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    display: grid;
+    grid-template-columns: 1fr 380px 1fr;
+    gap: 40px;
+    align-items: center;
+  }
+
+  .mobile-copy {
+    padding: 40px 20px;
+  }
+
+  .mobile-copy.left { text-align: right; }
+
+  .mobile-copy-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--brass);
+    margin-bottom: 12px;
+  }
+
+  .mobile-copy-title {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 28px;
+    font-weight: 400;
+    line-height: 1.2;
+    margin-bottom: 14px;
+    color: var(--text-primary);
+  }
+
+  .mobile-copy-body {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+  }
+
+  .phone {
+    background: #000;
+    border: 6px solid #1a1713;
+    border-radius: 40px;
+    padding: 8px;
+    box-shadow:
+      0 0 0 1px var(--border-strong),
+      0 40px 80px -20px rgba(0,0,0,0.8);
+    position: relative;
+  }
+
+  .phone::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 24px;
+    background: #000;
+    border-radius: 100px;
+    z-index: 2;
+  }
+
+  .phone-screen {
+    background: var(--bg-deep);
+    border-radius: 34px;
+    padding: 60px 18px 24px;
+    min-height: 720px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .phone-status {
+    position: absolute;
+    top: 22px;
+    left: 24px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-primary);
+    font-weight: 600;
+    z-index: 3;
+  }
+
+  .phone-status-right {
+    position: absolute;
+    top: 22px;
+    right: 24px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    z-index: 3;
+  }
+
+  .phone-bars, .phone-wifi, .phone-battery {
+    font-size: 10px;
+    color: var(--text-primary);
+  }
+
+  .phone-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding: 0 4px;
+  }
+
+  .phone-back {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--brass);
+    font-size: 20px;
+  }
+
+  .phone-header-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-tertiary);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .phone-more {
+    width: 28px;
+    height: 28px;
+    color: var(--text-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+
+  /* Notification pill */
+  .notif-pill {
+    background: var(--bg-surface);
+    border: 1px solid var(--brass-deep);
+    border-radius: 16px;
+    padding: 14px 16px;
+    margin: 0 4px 20px;
+    box-shadow: 0 4px 20px rgba(200, 155, 94, 0.1);
+    position: relative;
+  }
+
+  .notif-pill::before {
+    content: '';
+    position: absolute;
+    left: 16px;
+    top: -6px;
+    width: 12px;
+    height: 12px;
+    background: var(--brass);
+    border-radius: 50%;
+    box-shadow: 0 0 15px var(--brass);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  .notif-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .notif-src {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 12px;
+    color: var(--brass);
+  }
+
+  .notif-time {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .notif-title {
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 500;
+    line-height: 1.3;
+  }
+
+  .approval-screen-title {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 300;
+    font-size: 26px;
+    color: var(--text-primary);
+    line-height: 1.15;
+    margin-bottom: 6px;
+    padding: 0 4px;
+  }
+
+  .approval-screen-sub {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-tertiary);
+    letter-spacing: 0.05em;
+    margin-bottom: 20px;
+    padding: 0 4px;
+  }
+
+  /* Approval content card */
+  .approval-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+
+  .approval-card-head {
+    padding: 14px 14px 12px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .approval-requester {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .approval-req-avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--teal-muted);
+    color: var(--teal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 600;
+  }
+
+  .approval-req-name {
+    font-size: 12px;
+    color: var(--text-primary);
+  }
+
+  .approval-req-meta {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .approval-ask {
+    font-size: 14px;
+    color: var(--text-primary);
+    line-height: 1.45;
+  }
+
+  .approval-ask em {
+    color: var(--brass);
+    font-style: italic;
+    font-family: var(--serif);
+  }
+
+  /* Diff preview */
+  .diff-preview {
+    padding: 12px 14px;
+    background: var(--bg-deep);
+  }
+
+  .diff-file {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-tertiary);
+    margin-bottom: 8px;
+  }
+
+  .diff-line {
+    font-family: var(--mono);
+    font-size: 10px;
+    line-height: 1.5;
+    padding: 0 4px;
+    display: flex;
+    gap: 8px;
+  }
+
+  .diff-num {
+    color: var(--text-dim);
+    width: 16px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .diff-content { flex: 1; }
+
+  .diff-line.add { background: rgba(123, 160, 91, 0.08); color: #a8c882; }
+  .diff-line.remove { background: rgba(194, 107, 85, 0.08); color: #d89486; }
+  .diff-line.context { color: var(--text-tertiary); }
+
+  .diff-sign { width: 10px; color: var(--text-dim); }
+  .diff-line.add .diff-sign { color: var(--success); }
+  .diff-line.remove .diff-sign { color: var(--danger); }
+
+  /* Impact summary */
+  .impact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .impact-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+
+  .impact-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+
+  .impact-value {
+    font-family: var(--serif);
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .impact-value .unit {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-tertiary);
+    font-weight: 400;
+    margin-left: 2px;
+  }
+
+  /* Mobile action buttons */
+  .mobile-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: auto;
+  }
+
+  .mobile-btn {
+    padding: 14px 18px;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .mobile-btn.approve {
+    background: var(--brass);
+    color: var(--bg-deep);
+  }
+
+  .mobile-btn.review {
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+  }
+
+  .mobile-btn.reject {
+    background: transparent;
+    color: var(--danger);
+  }
+
+  /* Small utility: Paperclip-style sparkle */
+  .sparkle {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    color: var(--brass);
+    font-size: 20px;
+    opacity: 0.4;
+  }
+
+  /* Footer note */
+  .end-note {
+    max-width: 680px;
+    margin: 40px auto 0;
+    padding: 0 20px;
+    text-align: center;
+    color: var(--text-tertiary);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .end-note em {
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--brass);
+  }
+
+  /* SVG icons */
+  .icon {
+    width: 14px;
+    height: 14px;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    fill: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-wrapper">
+
+  <!-- INTRO -->
+  <div class="intro">
+    <div class="intro-badge">Concept · v0.1 · April 2026</div>
+    <h1>The bridge<br>between the <em>idea</em><br>and the <em>shipped product.</em></h1>
+    <p>Four screens of Helm — your operating console for running multiple companies with hybrid human+AI teams. Not a demo. The argument.</p>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- FRAME 1: COMMAND CENTER                        -->
+  <!-- ============================================= -->
+  <div class="frame-label">
+    <div class="frame-label-text">
+      <span class="frame-num">01 / COMMAND CENTER</span>
+      <span class="frame-title">The captain's view</span>
+    </div>
+    <span class="frame-desc">All companies, one glance, zero context switching.</span>
+  </div>
+
+  <div class="frame">
+    <div class="chrome">
+      <div class="chrome-dots"><div class="chrome-dot"></div><div class="chrome-dot"></div><div class="chrome-dot"></div></div>
+      <div class="chrome-url">helm.danieltorres.co<span> / command</span></div>
+    </div>
+
+    <div class="cc-container">
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <div class="brand">
+          <div class="brand-mark"></div>
+          <div class="brand-name">Helm</div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">Workspace</div>
+          <div class="nav-item active">
+            <svg class="icon nav-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Command Center
+          </div>
+          <div class="nav-item">
+            <svg class="icon nav-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Helm Chat
+          </div>
+          <div class="nav-item">
+            <svg class="icon nav-icon" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Pipelines
+          </div>
+          <div class="nav-item">
+            <svg class="icon nav-icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            Knowledge
+          </div>
+          <div class="nav-item">
+            <svg class="icon nav-icon" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Reports
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">Companies · 6</div>
+          <div class="company-item">
+            <div class="company-item-left">
+              <div class="company-dot" style="background: #c26b55;"></div>
+              Legacy Traders
+            </div>
+            <span class="company-count">12</span>
+          </div>
+          <div class="company-item">
+            <div class="company-item-left">
+              <div class="company-dot" style="background: #4a7a82;"></div>
+              Multi Topup
+            </div>
+            <span class="company-count">4</span>
+          </div>
+          <div class="company-item">
+            <div class="company-item-left">
+              <div class="company-dot" style="background: #7ba05b;"></div>
+              MH Home Solutions
+            </div>
+            <span class="company-count">7</span>
+          </div>
+          <div class="company-item">
+            <div class="company-item-left">
+              <div class="company-dot" style="background: #d4a23e;"></div>
+              Flagler Beach BNB
+            </div>
+            <span class="company-count">3</span>
+          </div>
+          <div class="company-item">
+            <div class="company-item-left">
+              <div class="company-dot" style="background: #c89b5e;"></div>
+              Charge2Go
+            </div>
+            <span class="company-count">5</span>
+          </div>
+          <div class="company-item">
+            <div class="company-item-left">
+              <div class="company-dot" style="background: #8a6d43;"></div>
+              Minari Solutions
+            </div>
+            <span class="company-count">2</span>
+          </div>
+        </div>
+
+        <div class="sidebar-footer">
+          <div class="avatar">DT</div>
+          <div class="user-info">
+            <div class="user-name">Daniel Torres</div>
+            <div class="user-role">Chairman / Operator</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main -->
+      <div class="main">
+        <div class="topbar">
+          <div class="breadcrumb">
+            Helm <span>/</span> Command Center
+          </div>
+          <div class="topbar-actions">
+            <div class="search-bar">
+              <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              Jump to anything
+              <span class="kbd">⌘K</span>
+            </div>
+            <button class="btn btn-primary">
+              <svg class="icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              New Company
+            </button>
+          </div>
+        </div>
+
+        <div class="page-content">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Good morning, <em>Daniel.</em></h1>
+              <div class="page-subtitle">Friday · April 18, 2026 · 6 companies · 23 agents active · 4 pending approvals</div>
+            </div>
+          </div>
+
+          <div class="quick-stats">
+            <div class="stat">
+              <div class="stat-label">Active Agents</div>
+              <div class="stat-value">23</div>
+              <div class="stat-change up">
+                <svg class="icon" style="width:10px;height:10px" viewBox="0 0 24 24"><polyline points="17 6 23 6 23 12"/><polyline points="1 18 1 12 7 12"/></svg>
+                +4 since yesterday
+              </div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Shipped this week</div>
+              <div class="stat-value">47</div>
+              <div class="stat-change up">
+                ↑ 38% vs last week
+              </div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Total spend · MTD</div>
+              <div class="stat-value">$1,847</div>
+              <div class="stat-change neutral">of $4,500 budget</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Needs your input</div>
+              <div class="stat-value">4</div>
+              <div class="stat-change warn">
+                ● 1 critical · 3 standard
+              </div>
+            </div>
+          </div>
+
+          <div class="section-bar">
+            <div>
+              <div class="section-title">Your companies</div>
+            </div>
+            <span class="section-hint">Sorted by activity · past 24h</span>
+          </div>
+
+          <div class="companies-grid">
+            <!-- Legacy Traders -->
+            <div class="company-card">
+              <div class="company-card-head">
+                <div class="company-flag">
+                  <div class="company-flag-dot" style="background: #c26b55;"></div>
+                  <div class="company-name">Legacy Traders</div>
+                </div>
+                <div class="company-status active">● Active</div>
+              </div>
+              <div class="company-metrics">
+                <div>
+                  <div class="metric-label">Open tickets</div>
+                  <div class="metric-value">12 <span class="sub">/ 47 closed</span></div>
+                </div>
+                <div>
+                  <div class="metric-label">Pipelines</div>
+                  <div class="metric-value">3 <span class="sub">active</span></div>
+                </div>
+                <div>
+                  <div class="metric-label">Spend · MTD</div>
+                  <div class="metric-value">$684 <span class="sub">/ $1,200</span></div>
+                  <div class="budget-bar"><div class="budget-fill" style="width: 57%"></div></div>
+                </div>
+                <div>
+                  <div class="metric-label">Velocity</div>
+                  <div class="metric-value">↑ 2.3× <span class="sub">vs solo</span></div>
+                </div>
+              </div>
+              <div class="company-footer">
+                <div class="agent-stack">
+                  <div class="agent-chip" style="background: var(--brass); color: var(--bg-deep)">C</div>
+                  <div class="agent-chip" style="background: var(--teal-muted); color: var(--teal)">F</div>
+                  <div class="agent-chip" style="background: var(--teal-muted); color: var(--teal)">B</div>
+                  <div class="agent-chip" style="background: var(--danger-muted); color: var(--danger)">Q</div>
+                  <div class="agent-chip more">+3</div>
+                </div>
+                <div class="footer-stats">
+                  <span>7</span> agents · <span>Salvador</span> +1
+                </div>
+              </div>
+            </div>
+
+            <!-- MH Home Solutions -->
+            <div class="company-card">
+              <div class="company-card-head">
+                <div class="company-flag">
+                  <div class="company-flag-dot" style="background: #7ba05b;"></div>
+                  <div class="company-name">MH Home Solutions</div>
+                </div>
+                <div class="company-status attention">⚠ Needs review</div>
+              </div>
+              <div class="company-metrics">
+                <div>
+                  <div class="metric-label">Open tickets</div>
+                  <div class="metric-value">7 <span class="sub">/ 18 closed</span></div>
+                </div>
+                <div>
+                  <div class="metric-label">Pipelines</div>
+                  <div class="metric-value">1 <span class="sub">active</span></div>
+                </div>
+                <div>
+                  <div class="metric-label">Spend · MTD</div>
+                  <div class="metric-value">$142 <span class="sub">/ $400</span></div>
+                  <div class="budget-bar"><div class="budget-fill" style="width: 35%"></div></div>
+                </div>
+                <div>
+                  <div class="metric-label">Leads / week</div>
+                  <div class="metric-value">23 <span class="sub">qualified</span></div>
+                </div>
+              </div>
+              <div class="company-footer">
+                <div class="agent-stack">
+                  <div class="agent-chip" style="background: var(--brass); color: var(--bg-deep)">C</div>
+                  <div class="agent-chip" style="background: rgba(123, 160, 91, 0.2); color: var(--success)">M</div>
+                  <div class="agent-chip" style="background: var(--teal-muted); color: var(--teal)">F</div>
+                  <div class="agent-chip more">+2</div>
+                </div>
+                <div class="footer-stats">
+                  <span>5</span> agents · solo
+                </div>
+              </div>
+            </div>
+
+            <!-- Flagler BNB -->
+            <div class="company-card">
+              <div class="company-card-head">
+                <div class="company-flag">
+                  <div class="company-flag-dot" style="background: #d4a23e;"></div>
+                  <div class="company-name">Flagler Beach BNB</div>
+                </div>
+                <div class="company-status active">● Active</div>
+              </div>
+              <div class="company-metrics">
+                <div>
+                  <div class="metric-label">Open tickets</div>
+                  <div class="metric-value">3 <span class="sub">/ 31 closed</span></div>
+                </div>
+                <div>
+                  <div class="metric-label">Pipelines</div>
+                  <div class="metric-value">—</div>
+                </div>
+                <div>
+                  <div class="metric-label">Occupancy</div>
+                  <div class="metric-value">87% <span class="sub">next 60d</span></div>
+                </div>
+                <div>
+                  <div class="metric-label">Revenue · MTD</div>
+                  <div class="metric-value">$8,420</div>
+                </div>
+              </div>
+              <div class="company-footer">
+                <div class="agent-stack">
+                  <div class="agent-chip" style="background: var(--brass); color: var(--bg-deep)">C</div>
+                  <div class="agent-chip" style="background: rgba(123, 160, 91, 0.2); color: var(--success)">G</div>
+                  <div class="agent-chip" style="background: rgba(123, 160, 91, 0.2); color: var(--success)">H</div>
+                </div>
+                <div class="footer-stats">
+                  <span>3</span> agents · auto
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Activity + Approvals -->
+          <div class="activity-row">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">Recent activity</div>
+                <span class="section-hint">Live · last 2h</span>
+              </div>
+              <div class="card-body">
+                <div class="activity-item">
+                  <div class="activity-dot success"></div>
+                  <div class="activity-content">
+                    <div class="activity-text">
+                      <span class="agent-tag">Frontend Dev · Sonnet</span> shipped checkout flow v2 to staging
+                      <span class="company-tag">Legacy Traders</span>
+                    </div>
+                    <div class="activity-meta">QA verification passed · 1m 24s · $0.42</div>
+                  </div>
+                </div>
+                <div class="activity-item">
+                  <div class="activity-dot warn"></div>
+                  <div class="activity-content">
+                    <div class="activity-text">
+                      <span class="agent-tag">Security Advisor · Opus</span> flagged 2 findings on auth refactor
+                      <span class="company-tag">Legacy Traders</span>
+                    </div>
+                    <div class="activity-meta">Awaiting your review · 12m ago</div>
+                  </div>
+                </div>
+                <div class="activity-item">
+                  <div class="activity-dot"></div>
+                  <div class="activity-content">
+                    <div class="activity-text">
+                      <span class="agent-tag">Interview Agent</span> drafted PRD for <em>EV Station Finder Mobile</em>
+                      <span class="company-tag">Charge2Go</span>
+                    </div>
+                    <div class="activity-meta">Converted to Company · ready for kickoff · 34m ago</div>
+                  </div>
+                </div>
+                <div class="activity-item">
+                  <div class="activity-dot success"></div>
+                  <div class="activity-content">
+                    <div class="activity-text">
+                      <span class="agent-tag">Guest Concierge</span> replied to 4 Airbnb inquiries in ES + EN
+                      <span class="company-tag">Flagler BNB</span>
+                    </div>
+                    <div class="activity-meta">All under 90s response time · $0.06 total</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">Pending your approval</div>
+                <span class="section-hint">4</span>
+              </div>
+              <div class="card-body">
+                <div class="approval-item">
+                  <div class="approval-head">
+                    <div class="approval-title">Hire: Backend Engineer</div>
+                    <div class="approval-tag">$400/mo cap</div>
+                  </div>
+                  <div class="approval-desc">CEO agent requests backend hire for Bryan AI profiler refactor. GPT-5.4 recommended.</div>
+                  <div class="approval-actions">
+                    <button class="mini-btn approve">Approve</button>
+                    <button class="mini-btn review">Review</button>
+                    <button class="mini-btn reject">Reject</button>
+                  </div>
+                </div>
+                <div class="approval-item">
+                  <div class="approval-head">
+                    <div class="approval-title">Deploy to production</div>
+                    <div class="approval-tag">Legacy Traders</div>
+                  </div>
+                  <div class="approval-desc">Checkout v2 passed all QA gates. Playwright E2E ✓ · Security scan ✓</div>
+                  <div class="approval-actions">
+                    <button class="mini-btn approve">Ship it</button>
+                    <button class="mini-btn review">Preview</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- FRAME 2: HELM CHAT / INTERVIEW MODE            -->
+  <!-- ============================================= -->
+  <div class="frame-label">
+    <div class="frame-label-text">
+      <span class="frame-num">02 / HELM CHAT</span>
+      <span class="frame-title">The thinking room</span>
+    </div>
+    <span class="frame-desc">Interview mode · multimodal input · thread-to-company conversion.</span>
+  </div>
+
+  <div class="frame">
+    <div class="chrome">
+      <div class="chrome-dots"><div class="chrome-dot"></div><div class="chrome-dot"></div><div class="chrome-dot"></div></div>
+      <div class="chrome-url">helm.danieltorres.co<span> / chat / new-ev-station-finder</span></div>
+    </div>
+
+    <div class="chat-container">
+      <!-- Sidebar (compact, threads) -->
+      <div class="sidebar">
+        <div class="brand">
+          <div class="brand-mark"></div>
+          <div class="brand-name">Helm</div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">Threads · 14</div>
+          <div class="nav-item">
+            <svg class="icon nav-icon" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            <span style="flex:1">EV Station Finder</span>
+            <span class="company-count">new</span>
+          </div>
+          <div class="nav-item active">
+            <svg class="icon nav-icon" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            MH pricing calc
+          </div>
+          <div class="nav-item">
+            Trading journal v3
+          </div>
+          <div class="nav-item">
+            Dock pilings Q&A
+          </div>
+          <div class="nav-item">
+            Bryan AI roadmap
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">Roles available</div>
+          <div class="nav-item" style="background: rgba(200, 155, 94, 0.08); color: var(--brass)">
+            <div class="company-dot" style="background: var(--brass)"></div>
+            Interview Agent
+          </div>
+          <div class="nav-item">
+            <div class="company-dot" style="background: var(--teal)"></div>
+            Strategy Advisor
+          </div>
+          <div class="nav-item">
+            <div class="company-dot" style="background: var(--success)"></div>
+            Technical Architect
+          </div>
+          <div class="nav-item">
+            <div class="company-dot" style="background: var(--warning)"></div>
+            QA Reviewer
+          </div>
+        </div>
+
+        <div class="sidebar-footer">
+          <div class="avatar">DT</div>
+          <div class="user-info">
+            <div class="user-name">Daniel Torres</div>
+            <div class="user-role">Chairman / Operator</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat main -->
+      <div class="chat-main">
+        <div class="chat-header">
+          <div>
+            <div class="role-badge">
+              <div class="role-dot"></div>
+              <span class="role-name">Interview Agent</span>
+              <span class="role-meta">· Opus 4.7 · bilingual</span>
+            </div>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center">
+            <span class="kbd">⌘ R</span>
+            <span style="font-family: var(--mono); font-size: 11px; color: var(--text-tertiary)">switch role</span>
+          </div>
+        </div>
+
+        <div class="chat-thread">
+          <!-- AI message -->
+          <div class="msg">
+            <div class="msg-head">
+              <div class="msg-avatar ai">H</div>
+              <div class="msg-name">Interview Agent</div>
+              <div class="msg-time">11:42 AM</div>
+            </div>
+            <div class="msg-body">
+              <p class="question">¿Qué estás tratando de construir — y para quién duele tanto este problema que lo pagarían hoy?</p>
+              <p style="color: var(--text-secondary); font-size: 13px; margin-top: 10px">Podés responder con voz, subir un deck, foto de pizarrón, o simplemente escribir. No me des la respuesta pulida — quiero la versión cruda que se la contarías a un socio.</p>
+            </div>
+          </div>
+
+          <!-- User message with attachments -->
+          <div class="msg">
+            <div class="msg-head">
+              <div class="msg-avatar user">D</div>
+              <div class="msg-name">Daniel</div>
+              <div class="msg-time">11:43 AM</div>
+            </div>
+            <div class="attachment-row">
+              <div class="attachment">
+                <div class="att-icon">PDF</div>
+                <div class="att-info">
+                  <div class="att-name">charge2go-research.pdf</div>
+                  <div class="att-size">2.4 MB · 18 pages</div>
+                </div>
+              </div>
+              <div class="attachment">
+                <div class="att-icon img">IMG</div>
+                <div class="att-info">
+                  <div class="att-name">whiteboard-sketch.jpg</div>
+                  <div class="att-size">1.1 MB · from iPhone</div>
+                </div>
+              </div>
+            </div>
+            <div class="msg-body">
+              <p>Los dueños de Teslas en Florida se frustran cuando viajan a zonas nuevas porque los estimados de las apps no consideran elevación, viento ni clima. La gente termina llegando con 4% de batería o manejando 30 millas fuera de ruta a un charger equivocado. Tengo la data de carga de Charge2Go pero necesito un front para dueños de EV, no para operadores de stations.</p>
+            </div>
+          </div>
+
+          <!-- AI follow-up -->
+          <div class="msg">
+            <div class="msg-head">
+              <div class="msg-avatar ai">H</div>
+              <div class="msg-name">Interview Agent</div>
+              <div class="msg-time">11:43 AM</div>
+            </div>
+            <div class="msg-body">
+              <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 12px">Leí el PDF y el sketch. Entiendo tres cosas: es B2C, datos reales de Charge2Go, y la ventaja competitiva es física (weather + elevation), no mejor UI.</p>
+              <p class="question">Antes de armarte el PRD, dos cosas que definen el stack:</p>
+            </div>
+            <div class="suggestion-row">
+              <div class="suggestion">🚗 Mobile-first (PWA)</div>
+              <div class="suggestion">💻 Landing + web app</div>
+              <div class="suggestion">📱 Native app (iOS + Android)</div>
+            </div>
+            <div class="suggestion-row">
+              <div class="suggestion">⚡ MVP en 2 semanas</div>
+              <div class="suggestion">🎯 Producto sólido en 6 semanas</div>
+              <div class="suggestion">🏗️ Plataforma completa en 12</div>
+            </div>
+
+            <!-- PRD Preview Card -->
+            <div class="prd-preview">
+              <div class="prd-head">
+                <div class="prd-label">● Draft PRD · auto-generated</div>
+                <span style="font-family: var(--mono); font-size: 10px; color: var(--text-tertiary)">v0.1 · 94% complete</span>
+              </div>
+              <div class="prd-body">
+                <div class="prd-title">EV Station Finder</div>
+                <div class="prd-desc">Mobile-first PWA for EV owners in Florida. Real-time range estimates factoring weather, elevation, and live charger availability from the Charge2Go network.</div>
+
+                <div class="prd-specs">
+                  <div>
+                    <div class="prd-spec-label">Recommended stack</div>
+                    <div class="prd-spec-value">
+                      <span class="stack-pill">Next.js 15</span>
+                      <span class="stack-pill">Tailwind</span>
+                      <span class="stack-pill">PWA</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="prd-spec-label">Parent company</div>
+                    <div class="prd-spec-value">Charge2Go (new sub-product)</div>
+                  </div>
+                  <div>
+                    <div class="prd-spec-label">Core features · v1</div>
+                    <div class="prd-spec-value">Map · Range calc · Weather API · Live availability</div>
+                  </div>
+                  <div>
+                    <div class="prd-spec-label">Agents to hire</div>
+                    <div class="prd-spec-value">CEO · Frontend · Backend · QA · SEO</div>
+                  </div>
+                </div>
+
+                <div class="prd-cta-row">
+                  <button class="btn btn-primary">
+                    <svg class="icon" viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                    Convert to Company
+                  </button>
+                  <button class="btn btn-ghost">Refine PRD</button>
+                  <button class="btn btn-ghost">Export as PDF</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input -->
+        <div class="chat-input">
+          <div class="input-wrap">
+            <textarea class="input-textarea" rows="1" placeholder="Reply to Interview Agent, or press ⌘↩ to Convert to Company…"></textarea>
+            <div class="input-bar">
+              <div class="input-tools">
+                <button class="tool-btn" title="Attach file">
+                  <svg class="icon" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                </button>
+                <button class="tool-btn" title="Voice note">
+                  <svg class="icon" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+                </button>
+                <button class="tool-btn" title="Image">
+                  <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                </button>
+              </div>
+              <div class="input-send">
+                <span class="input-hint">⌘↩ convert · ↩ send</span>
+                <button class="btn btn-primary">
+                  Send
+                  <svg class="icon" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right panel: Context Stack -->
+      <div class="context-panel">
+        <div class="ctx-section">
+          <div class="ctx-head">Interview progress</div>
+          <div class="ctx-item">
+            <div class="ctx-check done"></div>
+            <div class="ctx-label">Problem statement captured</div>
+          </div>
+          <div class="ctx-item">
+            <div class="ctx-check done"></div>
+            <div class="ctx-label">Target customer defined</div>
+          </div>
+          <div class="ctx-item">
+            <div class="ctx-check done"></div>
+            <div class="ctx-label">Attachments processed (PDF, IMG)</div>
+          </div>
+          <div class="ctx-item">
+            <div class="ctx-check done"></div>
+            <div class="ctx-label">Differentiator identified</div>
+          </div>
+          <div class="ctx-item">
+            <div class="ctx-check pending"></div>
+            <div class="ctx-label pending">Stack + timeline selection</div>
+          </div>
+          <div class="ctx-item">
+            <div class="ctx-check pending"></div>
+            <div class="ctx-label pending">Monetization model</div>
+          </div>
+        </div>
+
+        <div class="ctx-section">
+          <div class="ctx-head">Skills loaded for this role</div>
+          <div>
+            <span class="skill-chip"><span class="skill-chip-dot"></span>interview-founder</span>
+            <span class="skill-chip"><span class="skill-chip-dot"></span>prd-generator</span>
+            <span class="skill-chip"><span class="skill-chip-dot"></span>stack-selector</span>
+            <span class="skill-chip"><span class="skill-chip-dot"></span>es-en-bilingual</span>
+            <span class="skill-chip"><span class="skill-chip-dot"></span>daniel-taste-pack</span>
+          </div>
+        </div>
+
+        <div class="ctx-section">
+          <div class="ctx-head">Memory used (Engram)</div>
+          <div class="ctx-item">
+            <div class="ctx-check done"></div>
+            <div class="ctx-label">Your preferred Next.js patterns (47 memories)</div>
+          </div>
+          <div class="ctx-item">
+            <div class="ctx-check done"></div>
+            <div class="ctx-label">Charge2Go prior decisions (12 memories)</div>
+          </div>
+          <div class="ctx-item">
+            <div class="ctx-check done"></div>
+            <div class="ctx-label">Florida EV market notes (3 memories)</div>
+          </div>
+        </div>
+
+        <div class="ctx-section">
+          <div class="ctx-head">Session cost</div>
+          <div style="font-family: var(--serif); font-size: 22px; color: var(--text-primary); font-weight: 400">
+            $0.34
+          </div>
+          <div style="font-family: var(--mono); font-size: 10px; color: var(--text-tertiary); margin-top: 2px">
+            13 msgs · 34K tokens · Opus 4.7
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- FRAME 3: COMPANY DETAIL + SDD PIPELINE         -->
+  <!-- ============================================= -->
+  <div class="frame-label">
+    <div class="frame-label-text">
+      <span class="frame-num">03 / COMPANY VIEW</span>
+      <span class="frame-title">The factory floor</span>
+    </div>
+    <span class="frame-desc">Org chart · SDD pipeline · live agent streams · handoffs visualized.</span>
+  </div>
+
+  <div class="frame">
+    <div class="chrome">
+      <div class="chrome-dots"><div class="chrome-dot"></div><div class="chrome-dot"></div><div class="chrome-dot"></div></div>
+      <div class="chrome-url">helm.danieltorres.co<span> / companies / legacy-traders</span></div>
+    </div>
+
+    <div class="company-detail">
+      <!-- Company sidebar -->
+      <div class="co-sidebar">
+        <div class="co-header-area">
+          <div class="co-back">← COMMAND CENTER</div>
+          <div class="co-logo">
+            <div class="co-logo-mark">L</div>
+            <div>
+              <div class="co-title">Legacy Traders</div>
+              <div class="co-slug">legacy-traders.co</div>
+            </div>
+          </div>
+          <div class="co-pill-row">
+            <div class="co-pill">Trading · SaaS</div>
+            <div class="co-pill">Production</div>
+            <div class="co-pill">+Salvador</div>
+          </div>
+        </div>
+
+        <div class="org-section">
+          <div class="org-title">
+            <span>Org chart</span>
+            <span class="org-add">+</span>
+          </div>
+          <div class="agent-tree">
+            <div class="agent-node active">
+              <div class="agent-avatar ceo working">CEO</div>
+              <div class="agent-info">
+                <div class="agent-title-line">CEO · Strategist</div>
+                <div class="agent-model">Opus 4.7</div>
+              </div>
+            </div>
+            <div class="agent-node indent">
+              <div class="agent-avatar dev working">FE</div>
+              <div class="agent-info">
+                <div class="agent-title-line">Frontend Engineer</div>
+                <div class="agent-model">Claude Code · Sonnet</div>
+              </div>
+            </div>
+            <div class="agent-node indent">
+              <div class="agent-avatar dev working">BE</div>
+              <div class="agent-info">
+                <div class="agent-title-line">Backend Engineer</div>
+                <div class="agent-model">Codex · GPT-5.4</div>
+              </div>
+            </div>
+            <div class="agent-node indent">
+              <div class="agent-avatar ops idle">OPS</div>
+              <div class="agent-info">
+                <div class="agent-title-line">DevOps</div>
+                <div class="agent-model">Sonnet · GitHub App</div>
+              </div>
+            </div>
+            <div class="agent-node indent">
+              <div class="agent-avatar qa working">QA</div>
+              <div class="agent-info">
+                <div class="agent-title-line">QA Reviewer</div>
+                <div class="agent-model">Codex · Playwright</div>
+              </div>
+            </div>
+            <div class="agent-node indent">
+              <div class="agent-avatar sec idle">SEC</div>
+              <div class="agent-info">
+                <div class="agent-title-line">Security Advisor</div>
+                <div class="agent-model">Opus · read-only</div>
+              </div>
+            </div>
+            <div class="agent-node indent">
+              <div class="agent-avatar seo idle">SEO</div>
+              <div class="agent-info">
+                <div class="agent-title-line">SEO Specialist</div>
+                <div class="agent-model">Sonnet</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="org-section">
+          <div class="org-title">Humans</div>
+          <div class="agent-node">
+            <div class="avatar" style="width: 28px; height: 28px; font-size: 12px; background: linear-gradient(135deg, var(--teal), var(--teal-muted))">S</div>
+            <div class="agent-info">
+              <div class="agent-title-line">Salvador</div>
+              <div class="agent-model">Full-stack · ● online</div>
+            </div>
+          </div>
+          <div class="agent-node">
+            <div class="avatar" style="width: 28px; height: 28px; font-size: 12px">DT</div>
+            <div class="agent-info">
+              <div class="agent-title-line">Daniel (you)</div>
+              <div class="agent-model">Chairman</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="org-section">
+          <div class="org-title">Budget · April</div>
+          <div style="padding: 0 2px">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px">
+              <span style="font-family: var(--serif); font-size: 22px">$684</span>
+              <span style="font-family: var(--mono); font-size: 11px; color: var(--text-tertiary)">of $1,200</span>
+            </div>
+            <div class="budget-bar" style="margin-bottom: 6px"><div class="budget-fill" style="width: 57%"></div></div>
+            <div style="font-family: var(--mono); font-size: 10px; color: var(--text-tertiary)">12 days left · on track</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main: pipeline -->
+      <div class="co-main">
+        <div class="co-main-head">
+          <div>
+            <h1 class="pipeline-title">Pipelines <em>in flight.</em></h1>
+            <div class="pipeline-sub">3 active · 2 blocked on your review · last updated 34s ago</div>
+          </div>
+        </div>
+
+        <div class="tabs">
+          <button class="tab active">Pipelines<span class="tab-count">3</span></button>
+          <button class="tab">Issues<span class="tab-count">12</span></button>
+          <button class="tab">Handoffs<span class="tab-count">2</span></button>
+          <button class="tab">Activity</button>
+          <button class="tab">Knowledge</button>
+          <button class="tab">Settings</button>
+        </div>
+
+        <!-- SDD Pipeline -->
+        <div class="sdd-pipeline">
+          <div class="sdd-head">
+            <div>
+              <div class="sdd-feature-name">Bryan AI — Profiler v3 (trader risk profiles)</div>
+              <div class="sdd-feature-meta">Pipeline · started 2d ago · owned by CEO agent · PR #247</div>
+            </div>
+            <div class="sdd-progress">
+              <div class="sdd-progress-bar"><div class="sdd-progress-fill"></div></div>
+              <div class="sdd-progress-label">4 of 7 phases · 55%</div>
+            </div>
+          </div>
+
+          <div class="sdd-phases">
+            <div class="sdd-phase done">
+              <div class="phase-num">01</div>
+              <div class="phase-name">Explore</div>
+              <div class="phase-agent"><span class="phase-agent-dot"></span>CEO</div>
+              <div class="phase-status done">✓ done</div>
+            </div>
+            <div class="sdd-phase done">
+              <div class="phase-num">02</div>
+              <div class="phase-name">Propose</div>
+              <div class="phase-agent"><span class="phase-agent-dot"></span>CEO</div>
+              <div class="phase-status done">✓ 12m 41s</div>
+            </div>
+            <div class="sdd-phase done">
+              <div class="phase-num">03</div>
+              <div class="phase-name">Spec</div>
+              <div class="phase-agent"><span class="phase-agent-dot"></span>Arch</div>
+              <div class="phase-status done">✓ Salvador ✓</div>
+            </div>
+            <div class="sdd-phase active">
+              <div class="phase-num">04</div>
+              <div class="phase-name">Design</div>
+              <div class="phase-agent"><span class="phase-agent-dot"></span>Opus</div>
+              <div class="phase-status active">● running 3m</div>
+            </div>
+            <div class="sdd-phase">
+              <div class="phase-num">05</div>
+              <div class="phase-name">Implement</div>
+              <div class="phase-agent"><span class="phase-agent-dot"></span>FE + BE</div>
+              <div class="phase-status pending">queued</div>
+            </div>
+            <div class="sdd-phase">
+              <div class="phase-num">06</div>
+              <div class="phase-name">Verify</div>
+              <div class="phase-agent"><span class="phase-agent-dot"></span>QA</div>
+              <div class="phase-status pending">Playwright</div>
+            </div>
+            <div class="sdd-phase">
+              <div class="phase-num">07</div>
+              <div class="phase-name">Archive</div>
+              <div class="phase-agent"><span class="phase-agent-dot"></span>Docs</div>
+              <div class="phase-status pending">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Issues list -->
+        <div class="section-bar" style="margin-top: 32px">
+          <div class="section-title">Open issues · this week</div>
+          <span class="section-hint">12 open · 4 blocked · 8 in flight</span>
+        </div>
+
+        <div class="issue-list">
+          <div class="issue-item">
+            <div class="issue-id">LT-247</div>
+            <div>
+              <div class="issue-title">Bryan AI profiler v3 — risk score algorithm</div>
+              <div class="issue-sub">Pipeline active · design phase · blocks 3 downstream</div>
+            </div>
+            <div class="issue-tag in-progress">● in progress</div>
+            <div class="agent-assignee" style="background: var(--brass); color: var(--bg-deep)">A</div>
+            <div style="font-family: var(--mono); font-size: 10px; color: var(--text-tertiary); min-width: 50px; text-align: right">$42.10</div>
+          </div>
+          <div class="issue-item">
+            <div class="issue-id">LT-251</div>
+            <div>
+              <div class="issue-title">Dashboard — real-time P&L streaming</div>
+              <div class="issue-sub">WebSocket refactor · needs your review on approach</div>
+            </div>
+            <div class="issue-tag review">⚠ needs review</div>
+            <div class="agent-assignee" style="background: var(--teal-muted); color: var(--teal)">FE</div>
+            <div style="font-family: var(--mono); font-size: 10px; color: var(--text-tertiary); min-width: 50px; text-align: right">$18.44</div>
+          </div>
+          <div class="issue-item">
+            <div class="issue-id">LT-248</div>
+            <div>
+              <div class="issue-title">Auth: migrate from Clerk to NextAuth</div>
+              <div class="issue-sub">Security flagged 2 findings · rolled back</div>
+            </div>
+            <div class="issue-tag blocked">● blocked</div>
+            <div class="agent-assignee" style="background: rgba(212, 162, 62, 0.2); color: var(--warning)">S</div>
+            <div style="font-family: var(--mono); font-size: 10px; color: var(--text-tertiary); min-width: 50px; text-align: right">$8.12</div>
+          </div>
+          <div class="issue-item">
+            <div class="issue-id">LT-245</div>
+            <div>
+              <div class="issue-title">Landing page — options strategy explainer</div>
+              <div class="issue-sub">Shipped to production · awaiting SEO audit</div>
+            </div>
+            <div class="issue-tag done">✓ done</div>
+            <div class="agent-assignee" style="background: var(--teal-muted); color: var(--teal)">FE</div>
+            <div style="font-family: var(--mono); font-size: 10px; color: var(--text-tertiary); min-width: 50px; text-align: right">$6.88</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live activity panel -->
+      <div class="live-panel">
+        <div class="live-head">
+          <div class="live-title">Live stream</div>
+          <div class="live-indicator">
+            <div class="live-dot"></div>
+            3 agents
+          </div>
+        </div>
+
+        <div class="stream-item">
+          <div class="stream-head">
+            <span class="stream-agent">DESIGN · OPUS</span>
+            <span class="stream-action">thinking</span>
+            <span class="stream-time">NOW</span>
+          </div>
+          <div class="stream-body">
+            Evaluating trade-offs between Kelly criterion and modified Sharpe for risk scoring. Engram has 3 prior decisions on this — loading context…
+          </div>
+        </div>
+
+        <div class="stream-item">
+          <div class="stream-head">
+            <span class="stream-agent">FE · SONNET</span>
+            <span class="stream-action">writing</span>
+            <span class="stream-time">2s</span>
+          </div>
+          <div class="stream-body">
+            Editing <code>components/dashboard/LiveChart.tsx</code> · WebSocket subscription refactor
+          </div>
+        </div>
+
+        <div class="stream-item">
+          <div class="stream-head">
+            <span class="stream-agent">QA · PLAYWRIGHT</span>
+            <span class="stream-action">testing</span>
+            <span class="stream-time">12s</span>
+          </div>
+          <div class="stream-body">
+            Running E2E suite on staging · <code>checkout.spec.ts</code> · 14/23 passed, 2 flaky, 0 failed
+          </div>
+        </div>
+
+        <div class="stream-item">
+          <div class="stream-head">
+            <span class="stream-agent">SALVADOR</span>
+            <span class="stream-action">human commit</span>
+            <span class="stream-time">4m</span>
+          </div>
+          <div class="stream-body">
+            Pushed 3 commits to <code>feature/profiler-v3</code> · Engram synced · your Claude will see on next pull
+          </div>
+        </div>
+
+        <div class="stream-item">
+          <div class="stream-head">
+            <span class="stream-agent">CEO · OPUS</span>
+            <span class="stream-action">decision</span>
+            <span class="stream-time">8m</span>
+          </div>
+          <div class="stream-body">
+            Approved spec handoff to Design phase · saved rationale to Engram as <code>sdd/profiler-v3/spec-rationale</code>
+          </div>
+        </div>
+
+        <div class="cost-preview">
+          <div class="cost-head">
+            <div class="cost-label">Today's spend</div>
+            <div class="cost-period">April 18</div>
+          </div>
+          <div class="cost-val">$38.12</div>
+          <div class="cost-vs">↓ 22% vs yesterday · model routing tuned</div>
+          <div class="cost-bar"><div class="cost-bar-fill"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="sparkle">✦</div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- FRAME 4: MOBILE APPROVAL                       -->
+  <!-- ============================================= -->
+  <div class="frame-label">
+    <div class="frame-label-text">
+      <span class="frame-num">04 / APPROVAL GATE</span>
+      <span class="frame-title">From Gabriel's soccer field.</span>
+    </div>
+    <span class="frame-desc">Mobile · push notification · tap-to-approve with diff preview.</span>
+  </div>
+
+  <div class="mobile-frame">
+    <div class="mobile-copy left">
+      <div class="mobile-copy-label">The premise</div>
+      <div class="mobile-copy-title">CEO from<br>the bleachers.</div>
+      <div class="mobile-copy-body">
+        Paperclip forces you to the laptop for every gate. Helm pushes the decision to where you already are. Preview the diff, see the impact, approve with a tap — or send it back for rework with a voice note.
+        <br><br>
+        Audit trail captures everything. You don't lose accountability; you just regain your Saturday.
+      </div>
+    </div>
+
+    <!-- Phone -->
+    <div class="phone">
+      <div class="phone-screen">
+        <div class="phone-status">9:41</div>
+        <div class="phone-status-right">
+          <span class="phone-bars">●●●●</span>
+          <span class="phone-wifi">⌃</span>
+          <span class="phone-battery">▮▮▮</span>
+        </div>
+
+        <div class="phone-header">
+          <div class="phone-back">‹</div>
+          <div class="phone-header-title">Helm · Legacy Traders</div>
+          <div class="phone-more">⋯</div>
+        </div>
+
+        <!-- Notification preview -->
+        <div class="notif-pill">
+          <div class="notif-head">
+            <div class="notif-src">Helm</div>
+            <div class="notif-time">just now</div>
+          </div>
+          <div class="notif-title">Backend agent wants to deploy auth refactor to prod. Needs your call.</div>
+        </div>
+
+        <div class="approval-screen-title">Approval requested.</div>
+        <div class="approval-screen-sub">GATE · PHASE 06 · VERIFY → SHIP</div>
+
+        <!-- Main approval card -->
+        <div class="approval-card">
+          <div class="approval-card-head">
+            <div class="approval-requester">
+              <div class="approval-req-avatar">BE</div>
+              <span class="approval-req-name">Backend Engineer · Codex</span>
+              <span class="approval-req-meta">2m ago</span>
+            </div>
+            <div class="approval-ask">
+              All QA gates passed. Request permission to deploy <em>auth refactor v2</em> to production.
+            </div>
+          </div>
+
+          <div class="diff-preview">
+            <div class="diff-file">src/lib/auth/session.ts · 3 of 47 files</div>
+            <div class="diff-line context"><span class="diff-num">142</span><span class="diff-sign"> </span><span class="diff-content">export async function getSession() {</span></div>
+            <div class="diff-line remove"><span class="diff-num">143</span><span class="diff-sign">-</span><span class="diff-content">  const token = cookies().get('token')</span></div>
+            <div class="diff-line add"><span class="diff-num">143</span><span class="diff-sign">+</span><span class="diff-content">  const token = await verifyJWT(cookies())</span></div>
+            <div class="diff-line add"><span class="diff-num">144</span><span class="diff-sign">+</span><span class="diff-content">  if (!token) return null</span></div>
+            <div class="diff-line context"><span class="diff-num">145</span><span class="diff-sign"> </span><span class="diff-content">  return decode(token)</span></div>
+            <div class="diff-line context"><span class="diff-num">146</span><span class="diff-sign"> </span><span class="diff-content">}</span></div>
+          </div>
+        </div>
+
+        <div class="impact-grid">
+          <div class="impact-card">
+            <div class="impact-label">Users affected</div>
+            <div class="impact-value">1,247 <span class="unit">active</span></div>
+          </div>
+          <div class="impact-card">
+            <div class="impact-label">QA pass rate</div>
+            <div class="impact-value">100<span class="unit">%</span></div>
+          </div>
+          <div class="impact-card">
+            <div class="impact-label">Rollback ready</div>
+            <div class="impact-value">Yes<span class="unit"> · 15s</span></div>
+          </div>
+          <div class="impact-card">
+            <div class="impact-label">Security scan</div>
+            <div class="impact-value">Clean</div>
+          </div>
+        </div>
+
+        <div class="mobile-actions">
+          <button class="mobile-btn approve">
+            ✓  Approve & ship
+          </button>
+          <button class="mobile-btn review">
+            View full diff · 47 files
+          </button>
+          <button class="mobile-btn reject">
+            Send back with voice note
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="mobile-copy">
+      <div class="mobile-copy-label">The details</div>
+      <div class="mobile-copy-title">Context, not<br>just consent.</div>
+      <div class="mobile-copy-body">
+        Every approval shows <em>why it matters</em>: who asked, what changes, who gets affected, what's already been validated, and whether you can roll back.
+        <br><br>
+        If something smells wrong, record a voice note in Spanish or English — the agent transcribes it, re-reads the spec, and comes back with a revised plan. No typing on glass.
+      </div>
+    </div>
+  </div>
+
+  <!-- End note -->
+  <div class="end-note">
+    <em>This is not Figma. This is the argument.</em><br>
+    Four screens. Real flows. The UX that makes Daniel Torres the first serious operator running multiple companies from a hybrid human+AI team.<br><br>
+    Next up: the technical spec and week-by-week build plan.
+  </div>
+
+</div>
+
+</body>
+</html>

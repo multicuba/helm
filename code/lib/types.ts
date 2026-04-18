@@ -1,0 +1,173 @@
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  initials: string;
+}
+
+export interface Company {
+  id: string;
+  name: string;
+  slug: string;
+  colorHex: string;
+  industry: string;
+  status: "active" | "attention" | "paused";
+  monthlyBudget: number;
+  monthlySpendMtd: number;
+  openTickets: number;
+  closedTickets: number;
+  activePipelines: number;
+  agents: Agent[];
+  humans: Human[];
+  pipelines: Pipeline[];
+  issues: Issue[];
+  memories: Memory[];
+  keyMetric?: { label: string; value: string; sub?: string };
+}
+
+export interface Agent {
+  id: string;
+  role: string;
+  shortRole: string;
+  roleColor: "brass" | "teal" | "success" | "warning" | "danger" | "neutral";
+  name: string;
+  model: string;
+  provider: "anthropic" | "openai" | "google" | "custom";
+  status: "working" | "idle" | "blocked" | "offline";
+  currentTaskId?: string;
+  todayCost: number;
+  lifetimeCost: number;
+  skills: string[];
+  persona: string;
+}
+
+export interface Human {
+  id: string;
+  name: string;
+  role: string;
+  status: "online" | "offline";
+  initials: string;
+}
+
+export type SDDPhaseName =
+  | "explore"
+  | "propose"
+  | "spec"
+  | "design"
+  | "implement"
+  | "verify"
+  | "archive";
+
+export interface Pipeline {
+  id: string;
+  featureName: string;
+  startedAt: string; // ISO
+  ownerAgentId: string;
+  phases: SDDPhase[];
+  currentPhaseIndex: number;
+  prNumber?: number;
+  progressPercent: number;
+}
+
+export interface SDDPhase {
+  name: SDDPhaseName;
+  displayName: string;
+  status: "pending" | "active" | "done" | "blocked";
+  assignedAgentId?: string;
+  assignedLabel?: string;
+  durationLabel?: string;
+  notes?: string;
+}
+
+export interface Issue {
+  id: string;
+  code: string;
+  title: string;
+  description: string;
+  status: "in-progress" | "review" | "blocked" | "done" | "queued";
+  assigneeAgentId?: string;
+  assigneeLabel?: string;
+  assigneeColor?: string;
+  pipelineId?: string;
+  costSoFar: number;
+  createdAt: string;
+  subtitle?: string;
+}
+
+export interface Approval {
+  id: string;
+  companyId: string;
+  companyName: string;
+  type: "hire" | "deploy" | "budget" | "spec-review" | "security-override";
+  title: string;
+  description: string;
+  requesterAgentLabel: string;
+  tag: string;
+  createdAt: string;
+  impact?: Record<string, string>;
+}
+
+export interface Memory {
+  id: string;
+  title: string;
+  type: "decision" | "bug" | "architecture" | "learning";
+  content: string;
+  savedBy: string;
+  createdAt: string;
+  tags: string[];
+}
+
+export interface ActivityEntry {
+  id: string;
+  timestamp: string;
+  level: "neutral" | "success" | "warning" | "danger";
+  agentLabel?: string;
+  companyName: string;
+  text: string;
+  meta: string;
+}
+
+export interface Thread {
+  id: string;
+  title: string;
+  role: "interview" | "strategy" | "architect" | "reviewer";
+  companyContext?: string;
+  messages: ChatMessage[];
+  createdAt: string;
+  updatedAt: string;
+  totalCost: number;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  attachments?: Attachment[];
+  timestamp: string;
+  tokens?: number;
+  prdPreview?: PRDPreview;
+  suggestionGroups?: SuggestionGroup[];
+}
+
+export interface SuggestionGroup {
+  label: string;
+  options: string[];
+}
+
+export interface PRDPreview {
+  title: string;
+  description: string;
+  stackPills: string[];
+  parentCompany: string;
+  coreFeatures: string;
+  agentsToHire: string;
+  confidencePercent: number;
+}
+
+export interface Attachment {
+  id: string;
+  type: "pdf" | "image" | "audio";
+  fileName: string;
+  sizeLabel: string;
+}
