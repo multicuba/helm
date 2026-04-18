@@ -1,7 +1,8 @@
-export default function CompanyPage({ params }: { params: { id: string } }) {
+export default async function CompanyPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   return (
     <div className="px-8 py-9 max-w-[1400px] mx-auto">
-      <div className="text-mono-label mb-4">Company · {params.id}</div>
+      <div className="text-mono-label mb-4">Company · {id}</div>
       <h1 className="text-display text-4xl mb-4">
         Coming <em className="text-display-italic text-brass">Day 3</em>
       </h1>
