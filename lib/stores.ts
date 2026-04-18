@@ -45,7 +45,7 @@ export const useCompaniesStore = create<CompaniesState>()(
           companies: s.companies.map((c) => (c.id === id ? { ...c, ...patch } : c)),
         })),
     }),
-    { name: "helm-companies" }
+    { name: "helm-companies", version: 3 }
   )
 );
 
