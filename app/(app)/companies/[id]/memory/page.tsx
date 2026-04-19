@@ -94,7 +94,7 @@ export default function MemoryPage({
           <MemoryGraph
             memories={filtered}
             selectedId={selected?.id ?? null}
-            onSelect={setSelectedId}
+            onSelect={(id) => setSelectedId(id)}
           />
         </div>
 

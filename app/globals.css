@@ -117,4 +117,63 @@
   .animate-helm-pulse {
     animation: helm-pulse 2s ease-in-out infinite;
   }
+
+  @keyframes helm-edge-pulse {
+    0%   { stroke-dashoffset: 0; opacity: 1; }
+    100% { stroke-dashoffset: -16; opacity: 0.85; }
+  }
+}
+
+/* React Flow dark-theme overrides — respect Helm brass / bronze tokens */
+.memory-graph-root .react-flow__renderer,
+.memory-graph-root .react-flow__pane {
+  background-color: var(--color-bg-page);
+}
+.memory-graph-root .react-flow__node {
+  font-family: var(--font-sans);
+  color: var(--color-text-primary);
+}
+.memory-graph-root .react-flow__edge-path {
+  transition: stroke 180ms ease, opacity 180ms ease;
+}
+.memory-graph-root .react-flow__edge.memory-edge-active .react-flow__edge-path {
+  stroke-dasharray: 4 4;
+  animation: helm-edge-pulse 1.6s linear infinite;
+}
+.memory-graph-root .react-flow__controls {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+.memory-graph-root .react-flow__controls-button {
+  background: var(--color-bg-surface);
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-border-subtle);
+  width: 26px;
+  height: 26px;
+}
+.memory-graph-root .react-flow__controls-button:hover {
+  background: var(--color-bg-surface-2);
+  color: var(--color-brass);
+}
+.memory-graph-root .react-flow__controls-button svg {
+  fill: currentColor;
+  max-width: 12px;
+  max-height: 12px;
+}
+.memory-graph-root .react-flow__minimap {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.memory-graph-root .react-flow__minimap-mask {
+  fill: rgba(200, 155, 94, 0.08);
+  stroke: var(--color-brass-muted);
+  stroke-width: 1;
+}
+.memory-graph-root .react-flow__attribution {
+  display: none;
 }
