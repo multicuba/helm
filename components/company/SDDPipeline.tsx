@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import type { Pipeline, SDDPhase } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -11,10 +12,16 @@ const DEMO_STEP_MS = 7_000;
 export function SDDPipeline({
   pipeline,
   demoMode = false,
+  companyId,
 }: {
   pipeline: Pipeline;
   demoMode?: boolean;
+  companyId?: string;
 }) {
+  const router = useRouter();
+  const navigate = () => {
+    if (companyId) router.push(`/companies/${companyId}/pipelines/${pipeline.id}`);
+  };
   const [liveIndex, setLiveIndex] = useState(pipeline.currentPhaseIndex);
 
   useEffect(() => {
@@ -53,8 +60,29 @@ export function SDDPipeline({
     }
   }, [pipeline.startedAt]);
 
+  const clickable = !!companyId;
+
   return (
-    <div className="bg-bg-surface border border-border-subtle rounded-lg p-7 pb-6">
+    <div
+      className={cn(
+        "bg-bg-surface border border-border-subtle rounded-lg p-7 pb-6 transition-colors",
+        clickable && "cursor-pointer hover:border-brass-muted focus-within:border-brass-muted"
+      )}
+      onClick={clickable ? navigate : undefined}
+      role={clickable ? "link" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onKeyDown={
+        clickable
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                navigate();
+              }
+            }
+          : undefined
+      }
+      aria-label={clickable ? `Open pipeline ${pipeline.featureName}` : undefined}
+    >
       <div className="flex items-start justify-between gap-6 mb-6">
         <div className="min-w-0">
           <div className="font-serif italic text-lg text-text-primary mb-1">

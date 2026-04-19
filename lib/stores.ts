@@ -65,7 +65,7 @@ export const useCompaniesStore = create<CompaniesState>()(
         return seed;
       },
     }),
-    { name: "helm-companies", version: 4 }
+    { name: "helm-companies", version: 5 }
   )
 );
 

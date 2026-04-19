@@ -81,6 +81,7 @@ export interface Pipeline {
   currentPhaseIndex: number;
   prNumber?: number;
   progressPercent: number;
+  events?: PipelineEvent[];
 }
 
 export interface SDDPhase {
@@ -91,6 +92,36 @@ export interface SDDPhase {
   assignedLabel?: string;
   durationLabel?: string;
   notes?: string;
+  startedAt?: string;
+  completedAt?: string;
+  turnsUsed?: number;
+  cost?: number;
+  artifacts?: PhaseArtifact[];
+  handoffNote?: string;
+}
+
+export interface PhaseArtifact {
+  id: string;
+  name: string;
+  size?: string;
+  type: "doc" | "spec" | "design" | "code" | "report" | "summary";
+  href?: string;
+}
+
+export type PipelineEventType =
+  | "phase_started"
+  | "phase_completed"
+  | "handoff"
+  | "review_approved"
+  | "commit_pushed";
+
+export interface PipelineEvent {
+  id: string;
+  type: PipelineEventType;
+  agentId?: string;
+  phaseId?: SDDPhaseName;
+  timestamp: string;
+  description: string;
 }
 
 export interface Issue {
