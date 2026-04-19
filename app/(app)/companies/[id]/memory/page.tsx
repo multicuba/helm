@@ -49,18 +49,22 @@ export default function MemoryPage({
     } satisfies Record<MemoryTypeFilter, number>;
   }, [memories]);
 
-  const filtered = useMemo(() => {
+  const matchedIds = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return memories.filter((m) => {
-      if (typeFilter !== "all" && m.type !== typeFilter) return false;
-      if (!q) return true;
-      return (
-        m.title.toLowerCase().includes(q) ||
-        m.content.toLowerCase().includes(q) ||
-        m.tags.some((t) => t.toLowerCase().includes(q)) ||
-        m.savedBy.toLowerCase().includes(q)
-      );
+    const ids = new Set<string>();
+    memories.forEach((m) => {
+      if (typeFilter !== "all" && m.type !== typeFilter) return;
+      if (q) {
+        const hit =
+          m.title.toLowerCase().includes(q) ||
+          m.content.toLowerCase().includes(q) ||
+          m.tags.some((t) => t.toLowerCase().includes(q)) ||
+          m.savedBy.toLowerCase().includes(q);
+        if (!hit) return;
+      }
+      ids.add(m.id);
     });
+    return ids;
   }, [memories, query, typeFilter]);
 
   const selected = memories.find((m) => m.id === selectedId) ?? null;
@@ -92,7 +96,8 @@ export default function MemoryPage({
       <div className="flex-1 min-h-0 flex">
         <div className="flex-1 min-w-0 relative">
           <MemoryGraph
-            memories={filtered}
+            memories={memories}
+            matchedIds={matchedIds}
             selectedId={selected?.id ?? null}
             onSelect={(id) => setSelectedId(id)}
           />

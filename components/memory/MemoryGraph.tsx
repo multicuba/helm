@@ -4,6 +4,8 @@ import { useMemo } from "react";
 import {
   ReactFlow,
   Background,
+  Controls,
+  MiniMap,
   Handle,
   Position,
   type Node,
@@ -66,17 +68,21 @@ type MemoryNodeData = {
   tooltip: string;
   createdLabel: string;
   isSelected: boolean;
+  isDimmed: boolean;
 };
 
 type MemoryNodeType = Node<MemoryNodeData, "memory">;
 
 function MemoryNode({ data }: NodeProps<MemoryNodeType>) {
-  const { memory, tooltip, createdLabel, isSelected } = data;
+  const { memory, tooltip, createdLabel, isSelected, isDimmed } = data;
   const Icon = TYPE_ICON[memory.type];
   const colors = TYPE_COLORS[memory.type];
 
   return (
-    <div className="group relative">
+    <div
+      className="group relative transition-opacity duration-200"
+      style={{ opacity: isDimmed ? 0.2 : 1 }}
+    >
       <Handle
         type="target"
         position={Position.Top}
@@ -187,10 +193,12 @@ function formatCreated(iso: string): string {
 
 export function MemoryGraph({
   memories,
+  matchedIds,
   selectedId,
   onSelect,
 }: {
   memories: Memory[];
+  matchedIds: Set<string>;
   selectedId: string | null;
   onSelect: (id: string | null) => void;
 }) {
@@ -205,26 +213,34 @@ export function MemoryGraph({
         tooltip: m.title,
         createdLabel: formatCreated(m.createdAt),
         isSelected: m.id === selectedId,
+        isDimmed: !matchedIds.has(m.id),
       },
       draggable: true,
     }));
-  }, [memories, selectedId]);
+  }, [memories, matchedIds, selectedId]);
 
   const edges = useMemo<Edge[]>(() => {
     const base = computeEdges(memories);
     return base.map((e) => {
       const connected =
         selectedId != null && (e.source === selectedId || e.target === selectedId);
+      const dimmed = !matchedIds.has(e.source) || !matchedIds.has(e.target);
       return {
         ...e,
         style: {
           stroke: connected ? EDGE_STROKE_SELECTED : EDGE_STROKE_DEFAULT,
           strokeWidth: connected ? 1.4 : 1,
-          opacity: connected ? 0.95 : 0.55,
+          opacity: dimmed ? 0.12 : connected ? 0.95 : 0.55,
         },
       };
     });
-  }, [memories, selectedId]);
+  }, [memories, matchedIds, selectedId]);
+
+  const minimapNodeColor = (node: Node) => {
+    const m = (node.data as MemoryNodeData | undefined)?.memory;
+    if (!m) return "#6b6358";
+    return TYPE_COLORS[m.type].text;
+  };
 
   return (
     <div className="w-full h-full bg-bg-page memory-graph-root">
@@ -245,6 +261,16 @@ export function MemoryGraph({
         maxZoom={2}
       >
         <Background color="#2a241d" gap={24} size={1} />
+        <Controls showInteractive position="top-right" />
+        <MiniMap
+          position="bottom-right"
+          pannable
+          zoomable
+          maskColor="rgba(12, 10, 8, 0.7)"
+          nodeStrokeWidth={0}
+          nodeColor={minimapNodeColor}
+          nodeBorderRadius={8}
+        />
       </ReactFlow>
     </div>
   );
