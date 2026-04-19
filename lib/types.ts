@@ -188,6 +188,7 @@ export interface Issue {
   lastUpdatedBy?: { id: string; label: string; kind: "agent" | "human" };
   activity?: IssueActivity[];
   codeChanges?: IssueCodeChange[];
+  blocks?: string[];
   blockedBy?: string[];
   relatedTo?: string[];
 }

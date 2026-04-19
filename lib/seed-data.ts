@@ -802,7 +802,42 @@ const legacyIssues: Issue[] = [
     code: "LT-247",
     title: "Bryan AI profiler v3 — risk score algorithm",
     subtitle: "Pipeline active · design phase · blocks 3 downstream",
-    description: "Compute risk score from historical P&L + volatility metrics.",
+    description: `## Context
+
+Bryan AI's risk profiler shipped in **Q4 2025** with a naïve volatility-only score. The model misclassifies traders with low-vol but high-drawdown books — Salvador flagged this on three separate accounts last week.
+
+We need a v3 algorithm that combines:
+
+- **Realized volatility** (rolling 30d, EWMA decay)
+- **Maximum drawdown** over the last 90 trading days
+- **Modified Sharpe** with downside-only deviation
+- **Position concentration** (Herfindahl index across open contracts)
+
+## Goals
+
+1. Score range \`[0, 100]\` mapped to 5 risk tiers (\`conservative\`, \`balanced\`, \`growth\`, \`aggressive\`, \`speculative\`).
+2. Backtest must run in **under 90s** for 5y of SPX + VIX history.
+3. Stable across the 2020 March crash (no NaN, no infinity).
+
+## Decision log
+
+The CEO agent considered three approaches in [LT-240](#) and the proposal landed on a **modified Sharpe** with downside deviation. See \`docs/profiler/proposal.md\` for the full trade-off matrix.
+
+\`\`\`ts
+function riskScore(account: Account): number {
+  const sharpe = modifiedSharpe(account.returns);
+  const dd = maxDrawdown(account.equityCurve, 90);
+  const conc = herfindahl(account.positions);
+  return clamp(50 + 12 * sharpe - 30 * dd - 8 * conc, 0, 100);
+}
+\`\`\`
+
+## Open questions
+
+- Do we backfill scores for accounts created before 2024? Daniel says yes, Salvador says it's not worth the compute.
+- Should the score be cached in Postgres or recomputed on read?
+
+> "If we cache, we need an invalidation story for new fills. Recompute is safer but costs ~80ms per page load." — Backend Agent`,
     status: "in-progress",
     assigneeAgentId: "lt-be",
     assigneeLabel: "BE",
@@ -810,17 +845,309 @@ const legacyIssues: Issue[] = [
     pipelineId: "p-lt-profiler-v3",
     costSoFar: 42.10,
     createdAt: "2026-04-16T09:00:00Z",
+    updatedAt: "2026-04-19T13:37:00Z",
     priority: "p0",
-    labels: ["ai", "profiler", "algorithm", "core"],
+    labels: ["ai", "profiler", "algorithm", "core", "p0"],
     agentTimeMinutes: 504,
     tokenCostUsd: 12.47,
+    createdBy: { id: "daniel", label: "Daniel", kind: "human" },
+    lastUpdatedBy: { id: "lt-be", label: "Backend Agent", kind: "agent" },
+    blocks: ["LT-251", "LT-252"],
+    relatedTo: ["LT-240"],
+    activity: [
+      {
+        id: "lt-247-a-1",
+        type: "created",
+        actorId: "daniel",
+        actorType: "human",
+        actorLabel: "Daniel",
+        timestamp: "2026-04-16T09:00:00Z",
+        description: "opened the issue and tagged the CEO agent.",
+      },
+      {
+        id: "lt-247-a-2",
+        type: "assigned",
+        actorId: "lt-ceo",
+        actorType: "agent",
+        actorLabel: "CEO Agent",
+        timestamp: "2026-04-16T09:08:00Z",
+        description: "assigned Backend Agent after exploring 3 algorithmic alternatives.",
+      },
+      {
+        id: "lt-247-a-3",
+        type: "commented",
+        actorId: "lt-ceo",
+        actorType: "agent",
+        actorLabel: "CEO Agent",
+        timestamp: "2026-04-16T09:21:00Z",
+        description: "left a recommendation.",
+        meta: {
+          comment:
+            "Modified Sharpe with downside deviation wins on the 2020 March crash backtest. Kelly criterion blew up — too sensitive to fat tails.",
+        },
+      },
+      {
+        id: "lt-247-a-4",
+        type: "commit_pushed",
+        actorId: "lt-be",
+        actorType: "agent",
+        actorLabel: "Backend Agent",
+        timestamp: "2026-04-16T11:42:00Z",
+        description: "pushed first scoring scaffolding.",
+        meta: {
+          commitSha: "f8c3a2e9b1d4570c",
+          files: ["lib/scoring/sharpe.ts", "lib/scoring/drawdown.ts"],
+        },
+      },
+      {
+        id: "lt-247-a-5",
+        type: "review_requested",
+        actorId: "lt-be",
+        actorType: "agent",
+        actorLabel: "Backend Agent",
+        timestamp: "2026-04-17T08:14:00Z",
+        description: "requested review from Salvador on the math.",
+      },
+      {
+        id: "lt-247-a-6",
+        type: "commented",
+        actorId: "salvador",
+        actorType: "human",
+        actorLabel: "Salvador",
+        timestamp: "2026-04-17T10:02:00Z",
+        description: "left a comment.",
+        meta: {
+          comment:
+            "Math checks out. Concerned about NaN when account.returns < 30 samples. Add a guard.",
+        },
+      },
+      {
+        id: "lt-247-a-7",
+        type: "commit_pushed",
+        actorId: "lt-be",
+        actorType: "agent",
+        actorLabel: "Backend Agent",
+        timestamp: "2026-04-17T11:18:00Z",
+        description: "added sample-size guard + unit tests.",
+        meta: {
+          commitSha: "c9d18a04e2f73b21",
+          files: ["lib/scoring/sharpe.ts", "tests/scoring.spec.ts"],
+        },
+      },
+      {
+        id: "lt-247-a-8",
+        type: "flag_raised",
+        actorId: "lt-sec",
+        actorType: "agent",
+        actorLabel: "Security Agent",
+        timestamp: "2026-04-17T15:50:00Z",
+        description: "flagged a low-severity finding.",
+        meta: {
+          severity: "low",
+          comment:
+            "Score function reads from account.positions without auth scoping. Confirm caller checks ownership.",
+        },
+      },
+      {
+        id: "lt-247-a-9",
+        type: "status_changed",
+        actorId: "lt-be",
+        actorType: "agent",
+        actorLabel: "Backend Agent",
+        timestamp: "2026-04-18T09:30:00Z",
+        description: "moved the issue forward.",
+        meta: { fromStatus: "queued", toStatus: "in-progress" },
+      },
+      {
+        id: "lt-247-a-10",
+        type: "commit_pushed",
+        actorId: "lt-be",
+        actorType: "agent",
+        actorLabel: "Backend Agent",
+        timestamp: "2026-04-18T14:11:00Z",
+        description: "wired the API route + Postgres cache.",
+        meta: {
+          commitSha: "7b29e405ac1d8f60",
+          files: [
+            "server/routes/profiler.ts",
+            "components/profiler/RiskPanel.tsx",
+            "db/migrations/0042_profiler_cache.sql",
+          ],
+        },
+      },
+      {
+        id: "lt-247-a-11",
+        type: "review_requested",
+        actorId: "lt-be",
+        actorType: "agent",
+        actorLabel: "Backend Agent",
+        timestamp: "2026-04-18T16:40:00Z",
+        description: "requested review from QA on edge cases.",
+      },
+      {
+        id: "lt-247-a-12",
+        type: "commented",
+        actorId: "lt-qa",
+        actorType: "agent",
+        actorLabel: "QA Agent",
+        timestamp: "2026-04-19T13:37:00Z",
+        description: "started the test pass.",
+        meta: {
+          comment:
+            "Running 23 scenarios. 2020 March crash: ✓. Bond-only accounts: pending. iPad reflow: pending.",
+        },
+      },
+    ],
+    codeChanges: [
+      {
+        filename: "lib/scoring/sharpe.ts",
+        status: "M",
+        linesAdded: 42,
+        linesRemoved: 8,
+        diffSnippet: `--- a/lib/scoring/sharpe.ts
++++ b/lib/scoring/sharpe.ts
+@@ -1,12 +1,46 @@
+-export function sharpe(returns: number[]): number {
+-  const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
+-  const variance =
+-    returns.reduce((s, r) => s + (r - mean) ** 2, 0) / returns.length;
+-  return mean / Math.sqrt(variance);
++const MIN_SAMPLES = 30;
++
++export function modifiedSharpe(returns: number[]): number {
++  if (returns.length < MIN_SAMPLES) return 0;
++
++  const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
++  const downside = returns.filter((r) => r < 0);
++  if (downside.length === 0) return mean > 0 ? 3 : 0;
++
++  const downVar =
++    downside.reduce((s, r) => s + r * r, 0) / downside.length;
++  const downStd = Math.sqrt(downVar);
++  return downStd === 0 ? 0 : mean / downStd;
+ }`,
+      },
+      {
+        filename: "components/profiler/RiskPanel.tsx",
+        status: "A",
+        linesAdded: 87,
+        linesRemoved: 0,
+        diffSnippet: `--- /dev/null
++++ b/components/profiler/RiskPanel.tsx
+@@ -0,0 +1,87 @@
++"use client";
++
++import { useRiskScore } from "@/lib/hooks/useRiskScore";
++import { RiskTierBadge } from "./RiskTierBadge";
++
++const TIER_COLORS = {
++  conservative: "text-success",
++  balanced: "text-teal",
++  growth: "text-brass",
++  aggressive: "text-warning",
++  speculative: "text-danger",
++} as const;
++
++export function RiskPanel({ accountId }: { accountId: string }) {
++  const { score, tier, loading } = useRiskScore(accountId);
++  if (loading) return <RiskPanelSkeleton />;
++  return (
++    <div className="rounded-lg border p-4">
++      <h3 className="font-serif italic">Risk profile</h3>
++      <div className={TIER_COLORS[tier]}>{tier}</div>
++      <div className="font-mono text-2xl">{score.toFixed(0)}</div>
++    </div>
++  );
++}`,
+      },
+      {
+        filename: "server/routes/profiler.ts",
+        status: "M",
+        linesAdded: 28,
+        linesRemoved: 4,
+        diffSnippet: `--- a/server/routes/profiler.ts
++++ b/server/routes/profiler.ts
+@@ -14,11 +14,35 @@
+ export async function GET(req: Request, { params }: Ctx) {
+-  const account = await db.account.findUnique({ where: { id: params.id } });
+-  if (!account) return new Response("not found", { status: 404 });
+-  return Response.json({ score: legacyScore(account) });
++  const session = await getSession(req);
++  if (!session) return new Response("unauthorized", { status: 401 });
++
++  const account = await db.account.findUnique({
++    where: { id: params.id, ownerId: session.userId },
++    include: { positions: true, fills: { take: 500 } },
++  });
++  if (!account) return new Response("not found", { status: 404 });
++
++  const cached = await cache.get(\`risk:\${account.id}\`);
++  if (cached) return Response.json(cached);
++
++  const score = riskScore(account);
++  const tier = scoreToTier(score);
++  const payload = { score, tier, computedAt: new Date().toISOString() };
++  await cache.set(\`risk:\${account.id}\`, payload, { ttl: 60 });
++  return Response.json(payload);
+ }`,
+      },
+      {
+        filename: "tests/scoring.spec.ts",
+        status: "A",
+        linesAdded: 64,
+        linesRemoved: 0,
+        diffSnippet: `--- /dev/null
++++ b/tests/scoring.spec.ts
+@@ -0,0 +1,64 @@
++import { describe, it, expect } from "vitest";
++import { modifiedSharpe, riskScore } from "@/lib/scoring";
++import { fixture } from "./fixtures";
++
++describe("modifiedSharpe", () => {
++  it("returns 0 for short series", () => {
++    expect(modifiedSharpe([0.01, 0.02])).toBe(0);
++  });
++
++  it("survives the 2020 March crash", () => {
++    const out = modifiedSharpe(fixture.spx2020March);
++    expect(out).toBeGreaterThan(-2);
++    expect(out).toBeLessThan(2);
++  });
++
++  it("never returns NaN on bond-only accounts", () => {
++    const out = riskScore(fixture.bondOnlyAccount);
++    expect(Number.isNaN(out)).toBe(false);
++  });
++});`,
+      },
+    ],
   },
   {
     id: "lt-251",
     code: "LT-251",
     title: "Dashboard — real-time P&L streaming",
     subtitle: "WebSocket refactor · needs your review on approach",
-    description: "Move from polling to WebSocket for live P&L updates.",
+    description: `## Problem
+
+Polling \`/api/positions\` every 2s triggers ~430 requests/min per active session and hits Tradovate's rate limit during open. The dashboard P&L lags 2-4s behind actual fills.
+
+## Approach (proposal)
+
+Subscribe to a single WebSocket channel per account and push deltas. Reconnect on visibility change.
+
+- \`useLiveBook(accountId)\` hook exposes \`{ book, status, lastTick }\`
+- Heartbeat every 15s, exponential reconnect on drop
+- Falls back to polling if WS handshake fails twice
+
+## Risks
+
+- iPad Safari freezes after ~1min on long-lived sockets — needs investigation, possibly buffering issue
+- Reconnect storm if many users come back from background simultaneously
+
+## Out of scope
+
+- Order entry latency (separate issue, [LT-244](#))
+- Mobile push notifications`,
     status: "review",
     assigneeAgentId: "lt-fe",
     assigneeLabel: "FE",
@@ -828,17 +1155,275 @@ const legacyIssues: Issue[] = [
     pipelineId: "p-lt-dashboard-ws",
     costSoFar: 18.44,
     createdAt: "2026-04-17T14:20:00Z",
+    updatedAt: "2026-04-19T11:05:00Z",
     priority: "p1",
-    labels: ["dashboard", "frontend", "websocket"],
+    labels: ["dashboard", "frontend", "websocket", "performance"],
     agentTimeMinutes: 240,
     tokenCostUsd: 4.80,
+    createdBy: { id: "salvador", label: "Salvador", kind: "human" },
+    lastUpdatedBy: { id: "lt-fe", label: "Frontend Agent", kind: "agent" },
+    blockedBy: ["LT-247"],
+    relatedTo: ["LT-244"],
+    activity: [
+      {
+        id: "lt-251-a-1",
+        type: "created",
+        actorId: "salvador",
+        actorType: "human",
+        actorLabel: "Salvador",
+        timestamp: "2026-04-17T14:20:00Z",
+        description: "opened the issue.",
+      },
+      {
+        id: "lt-251-a-2",
+        type: "assigned",
+        actorId: "lt-ceo",
+        actorType: "agent",
+        actorLabel: "CEO Agent",
+        timestamp: "2026-04-17T14:34:00Z",
+        description: "routed to Frontend Agent.",
+      },
+      {
+        id: "lt-251-a-3",
+        type: "commented",
+        actorId: "lt-fe",
+        actorType: "agent",
+        actorLabel: "Frontend Agent",
+        timestamp: "2026-04-17T15:02:00Z",
+        description: "asked a clarifying question.",
+        meta: {
+          comment:
+            "Should I keep polling as a true fallback, or just surface 'reconnecting' and wait? Daniel's call.",
+        },
+      },
+      {
+        id: "lt-251-a-4",
+        type: "commented",
+        actorId: "daniel",
+        actorType: "human",
+        actorLabel: "Daniel",
+        timestamp: "2026-04-17T15:48:00Z",
+        description: "answered.",
+        meta: {
+          comment:
+            "Real fallback to polling. Traders can't see a 'reconnecting' modal during NFP.",
+        },
+      },
+      {
+        id: "lt-251-a-5",
+        type: "commit_pushed",
+        actorId: "lt-fe",
+        actorType: "agent",
+        actorLabel: "Frontend Agent",
+        timestamp: "2026-04-17T18:21:00Z",
+        description: "pushed initial WS hook.",
+        meta: {
+          commitSha: "2ad81f4c0e9b3170",
+          files: [
+            "lib/hooks/useLiveBook.ts",
+            "components/dashboard/LiveChart.tsx",
+          ],
+        },
+      },
+      {
+        id: "lt-251-a-6",
+        type: "commit_pushed",
+        actorId: "lt-fe",
+        actorType: "agent",
+        actorLabel: "Frontend Agent",
+        timestamp: "2026-04-18T10:14:00Z",
+        description: "added polling fallback + reconnect with jitter.",
+        meta: {
+          commitSha: "9c45e1b2f7da80aa",
+          files: ["lib/hooks/useLiveBook.ts"],
+        },
+      },
+      {
+        id: "lt-251-a-7",
+        type: "flag_raised",
+        actorId: "lt-qa",
+        actorType: "agent",
+        actorLabel: "QA Agent",
+        timestamp: "2026-04-18T14:30:00Z",
+        description: "flagged a regression.",
+        meta: {
+          severity: "medium",
+          comment:
+            "iPad Safari pinned tab freezes ~60s into the session. Reproduces on staging.",
+        },
+      },
+      {
+        id: "lt-251-a-8",
+        type: "commit_pushed",
+        actorId: "lt-fe",
+        actorType: "agent",
+        actorLabel: "Frontend Agent",
+        timestamp: "2026-04-19T09:12:00Z",
+        description: "switched to BroadcastChannel for tab sync.",
+        meta: {
+          commitSha: "31fe7a890c4d2155",
+          files: [
+            "lib/hooks/useLiveBook.ts",
+            "lib/sync/broadcast.ts",
+          ],
+        },
+      },
+      {
+        id: "lt-251-a-9",
+        type: "review_requested",
+        actorId: "lt-fe",
+        actorType: "agent",
+        actorLabel: "Frontend Agent",
+        timestamp: "2026-04-19T10:00:00Z",
+        description: "requested review from Daniel.",
+      },
+      {
+        id: "lt-251-a-10",
+        type: "status_changed",
+        actorId: "lt-fe",
+        actorType: "agent",
+        actorLabel: "Frontend Agent",
+        timestamp: "2026-04-19T11:05:00Z",
+        description: "moved to review.",
+        meta: { fromStatus: "in-progress", toStatus: "review" },
+      },
+    ],
+    codeChanges: [
+      {
+        filename: "lib/hooks/useLiveBook.ts",
+        status: "A",
+        linesAdded: 96,
+        linesRemoved: 0,
+        diffSnippet: `--- /dev/null
++++ b/lib/hooks/useLiveBook.ts
+@@ -0,0 +1,96 @@
++"use client";
++
++import { useEffect, useRef, useState } from "react";
++
++type Status = "connecting" | "live" | "polling" | "down";
++
++export function useLiveBook(accountId: string) {
++  const [book, setBook] = useState<Book | null>(null);
++  const [status, setStatus] = useState<Status>("connecting");
++  const wsRef = useRef<WebSocket | null>(null);
++  const retries = useRef(0);
++
++  useEffect(() => {
++    let cancelled = false;
++
++    function connect() {
++      const ws = new WebSocket(\`wss://api.legacytraders.app/book/\${accountId}\`);
++      wsRef.current = ws;
++
++      ws.onopen = () => {
++        retries.current = 0;
++        setStatus("live");
++      };
++      ws.onmessage = (e) => setBook(JSON.parse(e.data));
++      ws.onclose = () => {
++        if (cancelled) return;
++        retries.current += 1;
++        if (retries.current > 2) {
++          setStatus("polling");
++          startPolling(accountId, setBook);
++        } else {
++          const wait = Math.min(8000, 500 * 2 ** retries.current);
++          setTimeout(connect, wait + Math.random() * 250);
++        }
++      };
++    }
++
++    connect();
++    return () => {
++      cancelled = true;
++      wsRef.current?.close();
++    };
++  }, [accountId]);
++
++  return { book, status };
++}`,
+      },
+      {
+        filename: "components/dashboard/LiveChart.tsx",
+        status: "M",
+        linesAdded: 23,
+        linesRemoved: 41,
+        diffSnippet: `--- a/components/dashboard/LiveChart.tsx
++++ b/components/dashboard/LiveChart.tsx
+@@ -10,30 +10,12 @@
+ export function LiveChart({ accountId }: Props) {
+-  const [book, setBook] = useState<Book | null>(null);
+-  useEffect(() => {
+-    const id = setInterval(async () => {
+-      const r = await fetch(\`/api/positions/\${accountId}\`);
+-      setBook(await r.json());
+-    }, 2000);
+-    return () => clearInterval(id);
+-  }, [accountId]);
++  const { book, status } = useLiveBook(accountId);
+
+   return (
+     <div className="rounded-lg p-4">
++      <ConnectionDot status={status} />
+       {book ? <Chart data={book} /> : <Skeleton />}
+     </div>
+   );
+ }`,
+      },
+      {
+        filename: "lib/sync/broadcast.ts",
+        status: "A",
+        linesAdded: 38,
+        linesRemoved: 0,
+        diffSnippet: `--- /dev/null
++++ b/lib/sync/broadcast.ts
+@@ -0,0 +1,38 @@
++const channels = new Map<string, BroadcastChannel>();
++
++export function broadcast<T>(name: string, payload: T) {
++  if (typeof window === "undefined") return;
++  let ch = channels.get(name);
++  if (!ch) {
++    ch = new BroadcastChannel(name);
++    channels.set(name, ch);
++  }
++  ch.postMessage(payload);
++}`,
+      },
+    ],
   },
   {
     id: "lt-248",
     code: "LT-248",
     title: "Auth: migrate from Clerk to NextAuth",
     subtitle: "Security flagged 2 findings · rolled back",
-    description: "Migration rolled back pending security review.",
+    description: `## Status: ROLLED BACK
+
+Security agent raised **two high-severity findings** during the verify phase. The migration was reverted on staging on Apr 17. We need to address both before re-attempting.
+
+### Findings
+
+1. **Session token in Referer header** — preview deploy was leaking \`session_id\` in the URL hash on redirect. Mitigation: move tokens to httpOnly cookies before re-deploy.
+2. **Missing CSRF on POST /api/auth/callback** — Clerk handled this transparently; NextAuth requires explicit middleware.
+
+### Plan to unblock
+
+- [ ] Wrap \`/api/auth/*\` routes with the [\`csrf-token\`](#) middleware
+- [ ] Audit all \`signIn()\` redirects for token leakage
+- [ ] Re-run security review (Security Agent)
+- [ ] Stage migration with feature flag for 5% rollout
+
+\`\`\`ts
+// middleware.ts (proposed)
+export const config = { matcher: ["/api/auth/:path*"] };
+export function middleware(req: NextRequest) {
+  if (req.method !== "POST") return NextResponse.next();
+  return verifyCsrf(req);
+}
+\`\`\`
+
+> "We are not migrating until both findings show green in the next pass." — Daniel`,
     status: "blocked",
     assigneeAgentId: "lt-sec",
     assigneeLabel: "SEC",
@@ -846,10 +1431,229 @@ const legacyIssues: Issue[] = [
     pipelineId: "p-lt-auth-migration",
     costSoFar: 8.12,
     createdAt: "2026-04-15T11:00:00Z",
+    updatedAt: "2026-04-18T17:22:00Z",
     priority: "p0",
-    labels: ["auth", "security", "blocked"],
+    labels: ["auth", "security", "blocked", "p0"],
     agentTimeMinutes: 90,
     tokenCostUsd: 1.80,
+    createdBy: { id: "lt-ceo", label: "CEO Agent", kind: "agent" },
+    lastUpdatedBy: { id: "lt-sec", label: "Security Agent", kind: "agent" },
+    relatedTo: ["LT-247"],
+    activity: [
+      {
+        id: "lt-248-a-1",
+        type: "created",
+        actorId: "lt-ceo",
+        actorType: "agent",
+        actorLabel: "CEO Agent",
+        timestamp: "2026-04-15T11:00:00Z",
+        description: "opened the migration ticket.",
+      },
+      {
+        id: "lt-248-a-2",
+        type: "assigned",
+        actorId: "lt-ceo",
+        actorType: "agent",
+        actorLabel: "CEO Agent",
+        timestamp: "2026-04-15T11:14:00Z",
+        description: "assigned Backend Agent to draft the migration.",
+      },
+      {
+        id: "lt-248-a-3",
+        type: "commit_pushed",
+        actorId: "lt-be",
+        actorType: "agent",
+        actorLabel: "Backend Agent",
+        timestamp: "2026-04-16T09:30:00Z",
+        description: "pushed initial NextAuth scaffolding.",
+        meta: {
+          commitSha: "a1c4e98b3f720d51",
+          files: [
+            "lib/auth/index.ts",
+            "app/api/auth/[...nextauth]/route.ts",
+          ],
+        },
+      },
+      {
+        id: "lt-248-a-4",
+        type: "commit_pushed",
+        actorId: "lt-be",
+        actorType: "agent",
+        actorLabel: "Backend Agent",
+        timestamp: "2026-04-16T15:11:00Z",
+        description: "removed Clerk providers + updated middleware.",
+        meta: {
+          commitSha: "ce8b021df9a44730",
+          files: ["middleware.ts", "components/auth/SignInButton.tsx"],
+        },
+      },
+      {
+        id: "lt-248-a-5",
+        type: "review_requested",
+        actorId: "lt-be",
+        actorType: "agent",
+        actorLabel: "Backend Agent",
+        timestamp: "2026-04-17T09:00:00Z",
+        description: "requested security review.",
+      },
+      {
+        id: "lt-248-a-6",
+        type: "flag_raised",
+        actorId: "lt-sec",
+        actorType: "agent",
+        actorLabel: "Security Agent",
+        timestamp: "2026-04-17T11:42:00Z",
+        description: "flagged a high-severity finding.",
+        meta: {
+          severity: "high",
+          comment:
+            "Preview deploy leaks session_id via Referer header. Token is in the URL fragment after signIn().",
+        },
+      },
+      {
+        id: "lt-248-a-7",
+        type: "flag_raised",
+        actorId: "lt-sec",
+        actorType: "agent",
+        actorLabel: "Security Agent",
+        timestamp: "2026-04-17T11:55:00Z",
+        description: "flagged a second finding.",
+        meta: {
+          severity: "high",
+          comment:
+            "POST /api/auth/callback has no CSRF protection. Clerk handled this; NextAuth requires explicit middleware.",
+        },
+      },
+      {
+        id: "lt-248-a-8",
+        type: "status_changed",
+        actorId: "daniel",
+        actorType: "human",
+        actorLabel: "Daniel",
+        timestamp: "2026-04-17T12:30:00Z",
+        description: "moved to blocked and ordered a rollback.",
+        meta: { fromStatus: "review", toStatus: "blocked" },
+      },
+      {
+        id: "lt-248-a-9",
+        type: "commit_pushed",
+        actorId: "lt-ops",
+        actorType: "agent",
+        actorLabel: "DevOps Agent",
+        timestamp: "2026-04-17T13:14:00Z",
+        description: "rolled back staging deploy.",
+        meta: {
+          commitSha: "0db5749ec3a82f10",
+          files: ["infra/vercel/staging.json"],
+        },
+      },
+      {
+        id: "lt-248-a-10",
+        type: "commented",
+        actorId: "salvador",
+        actorType: "human",
+        actorLabel: "Salvador",
+        timestamp: "2026-04-18T10:08:00Z",
+        description: "left a note.",
+        meta: {
+          comment:
+            "Let me take a pass on this with you tomorrow morning. NextAuth defaults need a careful review.",
+        },
+      },
+      {
+        id: "lt-248-a-11",
+        type: "commented",
+        actorId: "lt-sec",
+        actorType: "agent",
+        actorLabel: "Security Agent",
+        timestamp: "2026-04-18T17:22:00Z",
+        description: "summarized the unblock plan.",
+        meta: {
+          comment:
+            "Both findings have remediation paths. Re-test after csrf middleware lands. ETA: 2 days.",
+        },
+      },
+    ],
+    codeChanges: [
+      {
+        filename: "middleware.ts",
+        status: "M",
+        linesAdded: 14,
+        linesRemoved: 22,
+        diffSnippet: `--- a/middleware.ts
++++ b/middleware.ts
+@@ -1,30 +1,22 @@
+-import { authMiddleware } from "@clerk/nextjs";
+-
+-export default authMiddleware({
+-  publicRoutes: ["/", "/login", "/api/health"],
+-});
++import { NextRequest, NextResponse } from "next/server";
++import { getToken } from "next-auth/jwt";
++
++export async function middleware(req: NextRequest) {
++  const token = await getToken({ req });
++  if (!token && !req.nextUrl.pathname.startsWith("/api/auth")) {
++    return NextResponse.redirect(new URL("/login", req.url));
++  }
++  return NextResponse.next();
++}
+
+ export const config = {
+   matcher: ["/((?!_next|.*\\\\..*).*)"],
+ };`,
+      },
+      {
+        filename: "lib/auth/index.ts",
+        status: "A",
+        linesAdded: 51,
+        linesRemoved: 0,
+        diffSnippet: `--- /dev/null
++++ b/lib/auth/index.ts
+@@ -0,0 +1,51 @@
++import NextAuth from "next-auth";
++import GitHub from "next-auth/providers/github";
++import Google from "next-auth/providers/google";
++
++export const { handlers, auth, signIn, signOut } = NextAuth({
++  providers: [
++    GitHub({ clientId: process.env.GITHUB_ID!, clientSecret: process.env.GITHUB_SECRET! }),
++    Google({ clientId: process.env.GOOGLE_ID!, clientSecret: process.env.GOOGLE_SECRET! }),
++  ],
++  session: { strategy: "jwt" },
++  callbacks: {
++    async session({ session, token }) {
++      if (token.sub) session.user.id = token.sub;
++      return session;
++    },
++  },
++});`,
+      },
+      {
+        filename: "components/auth/SignInButton.tsx",
+        status: "M",
+        linesAdded: 8,
+        linesRemoved: 14,
+        diffSnippet: `--- a/components/auth/SignInButton.tsx
++++ b/components/auth/SignInButton.tsx
+@@ -1,18 +1,12 @@
+-import { SignInButton as ClerkSignIn } from "@clerk/nextjs";
++"use client";
++
++import { signIn } from "next-auth/react";
+
+ export function SignInButton() {
+   return (
+-    <ClerkSignIn mode="modal">
+-      <button className="btn">Sign in</button>
+-    </ClerkSignIn>
++    <button className="btn" onClick={() => signIn("github")}>
++      Sign in with GitHub
++    </button>
+   );
+ }`,
+      },
+    ],
   },
   {
     id: "lt-245",
@@ -873,7 +1677,35 @@ const legacyIssues: Issue[] = [
     code: "LT-252",
     title: "Profiler — backtest harness for Sharpe variants",
     subtitle: "Blocks LT-247 verify phase · needs historical dataset",
-    description: "Wire backtest harness with 5y SPX + VIX data.",
+    description: `## Goal
+
+A reproducible backtest harness for the [LT-247](#) scoring algorithm. Should ingest 5y of SPX, VIX, and 10Y treasury data and produce per-tier hit rates.
+
+## Dataset
+
+- **SPX daily OHLC** — Yahoo Finance, 2020-01-01 → 2025-12-31
+- **VIX daily close** — CBOE
+- **10Y treasury** — FRED \`DGS10\`
+
+Stored locally under \`fixtures/historical/\` (gzip-compressed CSVs, ~14 MB).
+
+## Output contract
+
+\`\`\`ts
+type BacktestResult = {
+  scenarioId: string;
+  hits: number;       // # accounts whose realized risk matched predicted tier
+  total: number;      // # accounts evaluated
+  meanScore: number;
+  worstDrawdown: number;
+};
+\`\`\`
+
+## Acceptance
+
+- Runs in < 90s on M1 dev box
+- All 23 fixture scenarios produce a result (no crashes, no NaN)
+- HTML report written to \`/tmp/backtest/index.html\``,
     status: "in-progress",
     assigneeAgentId: "lt-be",
     assigneeLabel: "BE",
@@ -881,10 +1713,240 @@ const legacyIssues: Issue[] = [
     pipelineId: "p-lt-profiler-v3",
     costSoFar: 9.20,
     createdAt: "2026-04-17T09:00:00Z",
+    updatedAt: "2026-04-19T10:42:00Z",
     priority: "p1",
-    labels: ["profiler", "backend", "testing"],
+    labels: ["profiler", "backend", "testing", "data"],
     agentTimeMinutes: 180,
     tokenCostUsd: 3.60,
+    createdBy: { id: "lt-be", label: "Backend Agent", kind: "agent" },
+    lastUpdatedBy: { id: "lt-be", label: "Backend Agent", kind: "agent" },
+    blockedBy: ["LT-247"],
+    relatedTo: ["LT-243"],
+    activity: [
+      {
+        id: "lt-252-a-1",
+        type: "created",
+        actorId: "lt-be",
+        actorType: "agent",
+        actorLabel: "Backend Agent",
+        timestamp: "2026-04-17T09:00:00Z",
+        description: "spun off from LT-247 as a separate verify-phase blocker.",
+      },
+      {
+        id: "lt-252-a-2",
+        type: "commented",
+        actorId: "lt-ceo",
+        actorType: "agent",
+        actorLabel: "CEO Agent",
+        timestamp: "2026-04-17T09:18:00Z",
+        description: "scoped the dataset.",
+        meta: {
+          comment:
+            "Use 5y SPX + VIX. Skip equities — too noisy for the v3 model.",
+        },
+      },
+      {
+        id: "lt-252-a-3",
+        type: "commit_pushed",
+        actorId: "lt-be",
+        actorType: "agent",
+        actorLabel: "Backend Agent",
+        timestamp: "2026-04-17T13:42:00Z",
+        description: "pulled fixtures + initial harness skeleton.",
+        meta: {
+          commitSha: "84c1f032ab5d9711",
+          files: [
+            "scripts/backtest/run.ts",
+            "fixtures/historical/spx.csv.gz",
+          ],
+        },
+      },
+      {
+        id: "lt-252-a-4",
+        type: "commit_pushed",
+        actorId: "lt-be",
+        actorType: "agent",
+        actorLabel: "Backend Agent",
+        timestamp: "2026-04-18T11:20:00Z",
+        description: "wired scenario loader + result aggregator.",
+        meta: {
+          commitSha: "f67e2bd180a440c1",
+          files: [
+            "scripts/backtest/run.ts",
+            "scripts/backtest/scenarios.ts",
+          ],
+        },
+      },
+      {
+        id: "lt-252-a-5",
+        type: "commented",
+        actorId: "salvador",
+        actorType: "human",
+        actorLabel: "Salvador",
+        timestamp: "2026-04-18T15:08:00Z",
+        description: "left a heads-up.",
+        meta: {
+          comment:
+            "Make sure to skip federal holidays — last harness counted 252+ trading days/yr in 2020.",
+        },
+      },
+      {
+        id: "lt-252-a-6",
+        type: "commit_pushed",
+        actorId: "lt-be",
+        actorType: "agent",
+        actorLabel: "Backend Agent",
+        timestamp: "2026-04-18T16:55:00Z",
+        description: "fixed holiday calendar + added perf instrumentation.",
+        meta: {
+          commitSha: "2a18f4c0e9b30077",
+          files: [
+            "scripts/backtest/calendar.ts",
+            "scripts/backtest/run.ts",
+          ],
+        },
+      },
+      {
+        id: "lt-252-a-7",
+        type: "commented",
+        actorId: "lt-be",
+        actorType: "agent",
+        actorLabel: "Backend Agent",
+        timestamp: "2026-04-19T10:42:00Z",
+        description: "posted progress.",
+        meta: {
+          comment:
+            "Harness runs end-to-end in 71s on M1. 19/23 scenarios pass; 4 still throw on bond-only accounts.",
+        },
+      },
+      {
+        id: "lt-252-a-8",
+        type: "review_requested",
+        actorId: "lt-be",
+        actorType: "agent",
+        actorLabel: "Backend Agent",
+        timestamp: "2026-04-19T11:00:00Z",
+        description: "asked for an early review on the report layout.",
+      },
+      {
+        id: "lt-252-a-9",
+        type: "flag_raised",
+        actorId: "lt-qa",
+        actorType: "agent",
+        actorLabel: "QA Agent",
+        timestamp: "2026-04-19T12:14:00Z",
+        description: "flagged a low-severity finding.",
+        meta: {
+          severity: "low",
+          comment:
+            "Report HTML doesn't escape scenario names. Cosmetic but worth fixing before sharing.",
+        },
+      },
+      {
+        id: "lt-252-a-10",
+        type: "status_changed",
+        actorId: "lt-be",
+        actorType: "agent",
+        actorLabel: "Backend Agent",
+        timestamp: "2026-04-19T13:00:00Z",
+        description: "kept in-progress, added subtask for bond accounts.",
+        meta: { fromStatus: "in-progress", toStatus: "in-progress" },
+      },
+    ],
+    codeChanges: [
+      {
+        filename: "scripts/backtest/run.ts",
+        status: "A",
+        linesAdded: 78,
+        linesRemoved: 0,
+        diffSnippet: `--- /dev/null
++++ b/scripts/backtest/run.ts
+@@ -0,0 +1,78 @@
++import { loadHistorical } from "./loader";
++import { riskScore } from "@/lib/scoring";
++import { scenarios } from "./scenarios";
++import { tradingDaysBetween } from "./calendar";
++
++async function main() {
++  const data = await loadHistorical(["spx", "vix", "dgs10"]);
++  const start = Date.now();
++  const results = [];
++
++  for (const scenario of scenarios) {
++    const days = tradingDaysBetween(scenario.from, scenario.to);
++    const slice = data.slice(scenario.from, scenario.to);
++    let hits = 0;
++    for (const account of scenario.accounts) {
++      const predicted = riskScore({ ...account, returns: slice.returns });
++      if (predicted >= scenario.expectedMin && predicted <= scenario.expectedMax) {
++        hits += 1;
++      }
++    }
++    results.push({
++      scenarioId: scenario.id,
++      hits,
++      total: scenario.accounts.length,
++      days,
++    });
++  }
++
++  const elapsed = Date.now() - start;
++  console.log(\`Backtest finished in \${elapsed}ms\`);
++  console.table(results);
++}
++
++main().catch(console.error);`,
+      },
+      {
+        filename: "scripts/backtest/calendar.ts",
+        status: "A",
+        linesAdded: 34,
+        linesRemoved: 0,
+        diffSnippet: `--- /dev/null
++++ b/scripts/backtest/calendar.ts
+@@ -0,0 +1,34 @@
++const NYSE_HOLIDAYS_2024 = [
++  "2024-01-01", "2024-01-15", "2024-02-19", "2024-03-29",
++  "2024-05-27", "2024-06-19", "2024-07-04", "2024-09-02",
++  "2024-11-28", "2024-12-25",
++];
++
++export function isTradingDay(date: Date): boolean {
++  const day = date.getDay();
++  if (day === 0 || day === 6) return false;
++  const iso = date.toISOString().slice(0, 10);
++  return !NYSE_HOLIDAYS_2024.includes(iso);
++}
++
++export function tradingDaysBetween(from: Date, to: Date): number {
++  let count = 0;
++  const cur = new Date(from);
++  while (cur <= to) {
++    if (isTradingDay(cur)) count += 1;
++    cur.setDate(cur.getDate() + 1);
++  }
++  return count;
++}`,
+      },
+      {
+        filename: "scripts/backtest/scenarios.ts",
+        status: "M",
+        linesAdded: 22,
+        linesRemoved: 6,
+        diffSnippet: `--- a/scripts/backtest/scenarios.ts
++++ b/scripts/backtest/scenarios.ts
+@@ -1,8 +1,24 @@
+ export const scenarios = [
+   { id: "march-2020-crash", from: "2020-03-01", to: "2020-04-15" },
+   { id: "summer-2022-rally", from: "2022-06-01", to: "2022-08-15" },
++  { id: "ai-mania-2024",      from: "2024-01-15", to: "2024-04-30" },
++  { id: "rate-cut-fade",      from: "2024-09-15", to: "2024-12-15" },
++  { id: "vol-floor-2025",     from: "2025-03-01", to: "2025-06-30" },
++  { id: "small-cap-recovery", from: "2025-08-01", to: "2025-11-15" },
++  { id: "bond-only-stress",   from: "2025-09-01", to: "2025-12-31" },
+ ];`,
+      },
+    ],
   },
   {
     id: "lt-253",
@@ -926,17 +1988,254 @@ const legacyIssues: Issue[] = [
     code: "LT-249",
     title: "Checkout — Stripe 3DS edge cases",
     subtitle: "QA caught 3 drop-off paths on mobile Safari",
-    description: "Handle 3DS challenge retry + rejected card flow.",
+    description: `## Symptom
+
+Three 3DS scenarios drop off on mobile Safari (iOS 17 / 18). Conversion data shows ~6% of mobile checkouts fail at the SCA step.
+
+### Drop-off paths
+
+1. **3DS challenge dismissed** — user taps outside the bank sheet, no retry CTA
+2. **Card rejected after challenge** — error toast shows then disappears, no recovery
+3. **Bank webview crash** — Safari shows blank page, no telemetry
+
+### Repro
+
+\`\`\`bash
+# in checkout E2E
+pnpm test:e2e --grep "stripe-3ds-mobile"
+\`\`\`
+
+## Fix shape
+
+- Wrap \`stripe.confirmPayment\` in a recoverable state machine
+- Surface a \`tryAgain()\` action on every failure terminal state
+- Log the bank-side error code to Sentry (currently swallowed)
+
+> "We're losing real money on this one. Salvador saw two of these in production yesterday." — Daniel`,
     status: "review",
     assigneeAgentId: "lt-qa",
     assigneeLabel: "QA",
     assigneeColor: "danger",
     costSoFar: 11.60,
     createdAt: "2026-04-16T10:30:00Z",
+    updatedAt: "2026-04-19T09:48:00Z",
     priority: "p1",
-    labels: ["checkout", "payments", "qa", "mobile"],
+    labels: ["checkout", "payments", "qa", "mobile", "revenue"],
     agentTimeMinutes: 220,
     tokenCostUsd: 4.40,
+    createdBy: { id: "lt-qa", label: "QA Agent", kind: "agent" },
+    lastUpdatedBy: { id: "lt-fe", label: "Frontend Agent", kind: "agent" },
+    relatedTo: ["LT-243"],
+    activity: [
+      {
+        id: "lt-249-a-1",
+        type: "created",
+        actorId: "lt-qa",
+        actorType: "agent",
+        actorLabel: "QA Agent",
+        timestamp: "2026-04-16T10:30:00Z",
+        description: "filed after running the mobile 3DS suite.",
+      },
+      {
+        id: "lt-249-a-2",
+        type: "assigned",
+        actorId: "lt-ceo",
+        actorType: "agent",
+        actorLabel: "CEO Agent",
+        timestamp: "2026-04-16T10:42:00Z",
+        description: "assigned Frontend Agent.",
+      },
+      {
+        id: "lt-249-a-3",
+        type: "commented",
+        actorId: "lt-fe",
+        actorType: "agent",
+        actorLabel: "Frontend Agent",
+        timestamp: "2026-04-16T13:00:00Z",
+        description: "asked a clarifying question.",
+        meta: {
+          comment:
+            "Are we ok dropping the 'auto-retry on dismiss' UX? It's confusing on slow networks.",
+        },
+      },
+      {
+        id: "lt-249-a-4",
+        type: "commented",
+        actorId: "daniel",
+        actorType: "human",
+        actorLabel: "Daniel",
+        timestamp: "2026-04-16T13:24:00Z",
+        description: "answered.",
+        meta: { comment: "Yes. Explicit retry button, no auto." },
+      },
+      {
+        id: "lt-249-a-5",
+        type: "commit_pushed",
+        actorId: "lt-fe",
+        actorType: "agent",
+        actorLabel: "Frontend Agent",
+        timestamp: "2026-04-17T11:09:00Z",
+        description: "pushed checkout state machine.",
+        meta: {
+          commitSha: "76a3df2c0e9b4501",
+          files: [
+            "components/checkout/CheckoutMachine.ts",
+            "components/checkout/PaymentStep.tsx",
+          ],
+        },
+      },
+      {
+        id: "lt-249-a-6",
+        type: "commit_pushed",
+        actorId: "lt-fe",
+        actorType: "agent",
+        actorLabel: "Frontend Agent",
+        timestamp: "2026-04-18T14:32:00Z",
+        description: "wired Sentry capture for 3DS errors.",
+        meta: {
+          commitSha: "ba1c204fde9ec713",
+          files: [
+            "components/checkout/PaymentStep.tsx",
+            "lib/observability/sentry.ts",
+          ],
+        },
+      },
+      {
+        id: "lt-249-a-7",
+        type: "review_completed",
+        actorId: "lt-qa",
+        actorType: "agent",
+        actorLabel: "QA Agent",
+        timestamp: "2026-04-19T08:20:00Z",
+        description: "ran the 3DS suite again.",
+        meta: {
+          comment:
+            "All 3 paths now show a retry CTA. Drop-off down to 0.8% in staging.",
+        },
+      },
+      {
+        id: "lt-249-a-8",
+        type: "status_changed",
+        actorId: "lt-fe",
+        actorType: "agent",
+        actorLabel: "Frontend Agent",
+        timestamp: "2026-04-19T09:48:00Z",
+        description: "moved to review.",
+        meta: { fromStatus: "in-progress", toStatus: "review" },
+      },
+      {
+        id: "lt-249-a-9",
+        type: "review_requested",
+        actorId: "lt-fe",
+        actorType: "agent",
+        actorLabel: "Frontend Agent",
+        timestamp: "2026-04-19T09:50:00Z",
+        description: "requested final sign-off from Daniel.",
+      },
+    ],
+    codeChanges: [
+      {
+        filename: "components/checkout/CheckoutMachine.ts",
+        status: "A",
+        linesAdded: 88,
+        linesRemoved: 0,
+        diffSnippet: `--- /dev/null
++++ b/components/checkout/CheckoutMachine.ts
+@@ -0,0 +1,88 @@
++type State =
++  | { kind: "idle" }
++  | { kind: "submitting" }
++  | { kind: "challenging" }
++  | { kind: "succeeded" }
++  | { kind: "failed"; reason: string; retriable: boolean };
++
++type Event =
++  | { type: "SUBMIT" }
++  | { type: "CHALLENGE" }
++  | { type: "OK" }
++  | { type: "FAIL"; reason: string; retriable: boolean }
++  | { type: "RETRY" };
++
++export function reduce(state: State, event: Event): State {
++  switch (event.type) {
++    case "SUBMIT":
++      return { kind: "submitting" };
++    case "CHALLENGE":
++      return { kind: "challenging" };
++    case "OK":
++      return { kind: "succeeded" };
++    case "FAIL":
++      return { kind: "failed", reason: event.reason, retriable: event.retriable };
++    case "RETRY":
++      return state.kind === "failed" && state.retriable
++        ? { kind: "idle" }
++        : state;
++  }
++}`,
+      },
+      {
+        filename: "components/checkout/PaymentStep.tsx",
+        status: "M",
+        linesAdded: 56,
+        linesRemoved: 12,
+        diffSnippet: `--- a/components/checkout/PaymentStep.tsx
++++ b/components/checkout/PaymentStep.tsx
+@@ -1,12 +1,56 @@
+-export function PaymentStep() {
+-  const stripe = useStripe();
+-  return <button onClick={() => stripe.confirmPayment(...)}>Pay</button>;
+-}
++export function PaymentStep() {
++  const stripe = useStripe();
++  const [state, send] = useReducer(reduce, { kind: "idle" });
++
++  async function pay() {
++    send({ type: "SUBMIT" });
++    const result = await stripe.confirmPayment({ /* ... */ });
++    if (result.error) {
++      Sentry.captureMessage("3ds-failure", {
++        extra: { code: result.error.code, message: result.error.message },
++      });
++      send({
++        type: "FAIL",
++        reason: result.error.message ?? "unknown",
++        retriable: result.error.code !== "card_declined",
++      });
++      return;
++    }
++    send({ type: "OK" });
++  }
++
++  if (state.kind === "failed") {
++    return (
++      <div>
++        <p>{state.reason}</p>
++        {state.retriable && <button onClick={() => send({ type: "RETRY" })}>Try again</button>}
++      </div>
++    );
++  }
++
++  return <button onClick={pay}>Pay</button>;
++}`,
+      },
+      {
+        filename: "lib/observability/sentry.ts",
+        status: "M",
+        linesAdded: 12,
+        linesRemoved: 2,
+        diffSnippet: `--- a/lib/observability/sentry.ts
++++ b/lib/observability/sentry.ts
+@@ -3,6 +3,16 @@
+ export function captureMessage(name: string, ctx?: Record<string, unknown>) {
+-  Sentry.captureMessage(name, { extra: ctx });
++  Sentry.captureMessage(name, {
++    level: "warning",
++    extra: { ...ctx, ts: Date.now() },
++    tags: { surface: "checkout" },
++  });
+ }`,
+      },
+    ],
   },
   {
     id: "lt-244",

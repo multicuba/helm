@@ -14,10 +14,12 @@ export function LinkedIssuesSection({
   issue: Issue;
   company: Company;
 }) {
-  const blocks = issue.blockedBy ?? [];
+  const blocks = issue.blocks ?? [];
+  const blockedBy = issue.blockedBy ?? [];
   const related = issue.relatedTo ?? [];
 
-  if (blocks.length === 0 && related.length === 0) return null;
+  if (blocks.length === 0 && blockedBy.length === 0 && related.length === 0)
+    return null;
 
   return (
     <MetaSection label="Linked issues">
@@ -26,6 +28,14 @@ export function LinkedIssuesSection({
           <LinkedGroup
             kind="Blocks"
             codes={blocks}
+            companyId={company.id}
+            issues={company.issues}
+          />
+        )}
+        {blockedBy.length > 0 && (
+          <LinkedGroup
+            kind="Blocked by"
+            codes={blockedBy}
             companyId={company.id}
             issues={company.issues}
           />
