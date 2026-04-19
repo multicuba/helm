@@ -65,7 +65,7 @@ export function MemoryDetail({
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="px-8 py-7 max-w-[820px]"
+      className="px-6 py-6"
     >
       <div className="flex items-center gap-2 mb-4">
         <span
@@ -81,7 +81,7 @@ export function MemoryDetail({
         </span>
       </div>
 
-      <h2 className="text-display-italic text-[28px] leading-[1.15] text-text-primary mb-5">
+      <h2 className="text-display-italic text-[22px] leading-[1.2] text-text-primary mb-4">
         {memory.title}
       </h2>
 

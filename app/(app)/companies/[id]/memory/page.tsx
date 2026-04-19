@@ -84,7 +84,7 @@ export default function MemoryPage({
   }
 
   return (
-    <div className="flex-1 min-w-0 bg-bg-page flex flex-col overflow-hidden">
+    <div className="h-full bg-bg-page flex flex-col overflow-hidden">
       <MemoryHeader company={company} totalMemories={memories.length} />
 
       <MemoryFilters
@@ -97,7 +97,7 @@ export default function MemoryPage({
 
       {/* Desktop: graph + detail panel */}
       <div className="flex-1 min-h-0 hidden md:flex">
-        <div className="flex-1 min-w-0 relative">
+        <div className="flex-1 min-w-0 relative h-full">
           <MemoryGraph
             memories={memories}
             matchedIds={matchedIds}
@@ -106,7 +106,7 @@ export default function MemoryPage({
           />
         </div>
 
-        <aside className="w-[440px] border-l border-border-subtle bg-bg-page overflow-y-auto flex-shrink-0">
+        <aside className="w-[360px] border-l border-border-subtle bg-bg-page overflow-y-auto flex-shrink-0">
           <MemoryDetail memory={selected} company={company} />
         </aside>
       </div>

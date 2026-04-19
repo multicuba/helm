@@ -28,24 +28,22 @@ export function MemoryFilters({
   ];
 
   return (
-    <div className="border-b border-border-subtle">
-      <div className="px-4 pt-4 pb-3">
-        <div className="relative">
-          <Search
-            className="w-3.5 h-3.5 text-text-dim absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
-            strokeWidth={1.5}
-          />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => onQueryChange(e.target.value)}
-            placeholder="Search memories, tags, content…"
-            className="w-full bg-bg-page border border-border-subtle rounded px-8 py-1.5 text-[12px] text-text-primary placeholder:text-text-dim focus:outline-none focus:border-brass-muted transition-colors"
-          />
-        </div>
+    <div className="px-7 py-2.5 border-b border-border-subtle flex items-center gap-4 flex-shrink-0">
+      <div className="relative w-[280px] flex-shrink-0">
+        <Search
+          className="w-3.5 h-3.5 text-text-dim absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
+          strokeWidth={1.5}
+        />
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => onQueryChange(e.target.value)}
+          placeholder="Search memories, tags, content…"
+          className="w-full bg-bg-page border border-border-subtle rounded px-8 py-1.5 text-[12px] text-text-primary placeholder:text-text-dim focus:outline-none focus:border-brass-muted transition-colors"
+        />
       </div>
 
-      <div className="flex flex-wrap gap-1 px-4 pb-3">
+      <div className="flex flex-wrap gap-1 min-w-0">
         {filters.map((f) => {
           const isActive = typeFilter === f.key;
           return (
