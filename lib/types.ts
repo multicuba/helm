@@ -127,19 +127,69 @@ export interface PipelineEvent {
   description: string;
 }
 
+export type IssuePriority = "p0" | "p1" | "p2" | "p3";
+
+export type IssueActivityType =
+  | "created"
+  | "assigned"
+  | "status_changed"
+  | "commented"
+  | "commit_pushed"
+  | "flag_raised"
+  | "review_requested"
+  | "review_completed"
+  | "closed";
+
+export interface IssueActivity {
+  id: string;
+  type: IssueActivityType;
+  actorId: string;
+  actorType: "agent" | "human" | "system";
+  actorLabel: string;
+  timestamp: string;
+  description: string;
+  meta?: {
+    files?: string[];
+    commitSha?: string;
+    fromStatus?: string;
+    toStatus?: string;
+    severity?: "low" | "medium" | "high";
+    comment?: string;
+  };
+}
+
+export interface IssueCodeChange {
+  filename: string;
+  status: "A" | "M" | "D";
+  linesAdded: number;
+  linesRemoved: number;
+  diffSnippet?: string;
+}
+
 export interface Issue {
   id: string;
   code: string;
   title: string;
   description: string;
   status: "in-progress" | "review" | "blocked" | "done" | "queued";
+  priority: IssuePriority;
   assigneeAgentId?: string;
   assigneeLabel?: string;
   assigneeColor?: string;
   pipelineId?: string;
   costSoFar: number;
   createdAt: string;
+  updatedAt?: string;
   subtitle?: string;
+  labels: string[];
+  agentTimeMinutes: number;
+  tokenCostUsd: number;
+  createdBy?: { id: string; label: string; kind: "agent" | "human" };
+  lastUpdatedBy?: { id: string; label: string; kind: "agent" | "human" };
+  activity?: IssueActivity[];
+  codeChanges?: IssueCodeChange[];
+  blockedBy?: string[];
+  relatedTo?: string[];
 }
 
 export interface Approval {

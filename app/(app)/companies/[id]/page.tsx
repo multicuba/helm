@@ -148,7 +148,7 @@ export default function CompanyPage({
 
             {company.issues.length > 0 && (
               <div className="pt-4">
-                <IssuesList issues={company.issues} />
+                <IssuesList issues={company.issues} companyId={company.id} />
               </div>
             )}
           </div>
@@ -156,7 +156,7 @@ export default function CompanyPage({
 
         {activeTab === "issues" && (
           company.issues.length > 0 ? (
-            <IssuesList issues={company.issues} />
+            <IssuesList issues={company.issues} companyId={company.id} />
           ) : (
             <EmptyState label="No open issues." />
           )
