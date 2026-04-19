@@ -2,6 +2,7 @@
 
 import { use, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
+import { Brain } from "lucide-react";
 import { useCompaniesStore } from "@/lib/stores";
 import { MemoryHeader } from "@/components/memory/MemoryHeader";
 import { MemoryDetail } from "@/components/memory/MemoryDetail";
@@ -35,7 +36,7 @@ export default function MemoryPage({
   );
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<MemoryTypeFilter>("all");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedMemoryId, setSelectedMemoryId] = useState<string | null>(null);
 
   const memories = company?.memories ?? [];
 
@@ -67,7 +68,8 @@ export default function MemoryPage({
     return ids;
   }, [memories, query, typeFilter]);
 
-  const selected = memories.find((m) => m.id === selectedId) ?? null;
+  const selected =
+    memories.find((m) => m.id === selectedMemoryId) ?? null;
 
   if (!company) {
     return (
@@ -93,19 +95,38 @@ export default function MemoryPage({
         counts={counts}
       />
 
-      <div className="flex-1 min-h-0 flex">
+      {/* Desktop: graph + detail panel */}
+      <div className="flex-1 min-h-0 hidden md:flex">
         <div className="flex-1 min-w-0 relative">
           <MemoryGraph
             memories={memories}
             matchedIds={matchedIds}
-            selectedId={selected?.id ?? null}
-            onSelect={(id) => setSelectedId(id)}
+            selectedId={selectedMemoryId}
+            onSelect={setSelectedMemoryId}
           />
         </div>
 
         <aside className="w-[440px] border-l border-border-subtle bg-bg-page overflow-y-auto flex-shrink-0">
           <MemoryDetail memory={selected} company={company} />
         </aside>
+      </div>
+
+      {/* Mobile: graph-too-narrow fallback */}
+      <div className="flex-1 min-h-0 flex md:hidden items-center justify-center px-8">
+        <div className="max-w-xs text-center">
+          <Brain
+            className="w-8 h-8 text-brass mx-auto mb-4 opacity-80"
+            strokeWidth={1.3}
+          />
+          <div className="text-display-italic text-[22px] leading-tight text-text-primary mb-3">
+            Graph view is desktop-only.
+          </div>
+          <p className="font-mono text-[11px] leading-relaxed text-text-tertiary">
+            Engram&apos;s memory graph needs more room than a phone can give.
+            Open this page on a wider screen to explore the{" "}
+            {memories.length} memories and their connections.
+          </p>
+        </div>
       </div>
     </div>
   );

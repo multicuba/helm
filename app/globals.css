@@ -119,8 +119,8 @@
   }
 
   @keyframes helm-edge-pulse {
-    0%   { stroke-dashoffset: 0; opacity: 1; }
-    100% { stroke-dashoffset: -16; opacity: 0.85; }
+    from { stroke-dashoffset: 0; }
+    to   { stroke-dashoffset: -24; }
   }
 }
 
