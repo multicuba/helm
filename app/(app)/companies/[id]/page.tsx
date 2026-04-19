@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useState } from "react";
+import Link from "next/link";
 import { useCompaniesStore } from "@/lib/stores";
 import { CompanySidebar } from "@/components/company/CompanySidebar";
 import { SDDPipeline } from "@/components/company/SDDPipeline";
@@ -15,7 +16,8 @@ const TABS = [
   { key: "issues", label: "Issues" },
   { key: "handoffs", label: "Handoffs" },
   { key: "activity", label: "Activity" },
-  { key: "knowledge", label: "Knowledge" },
+  { key: "knowledge", label: "Knowledge", href: (id: string) => `/companies/${id}/knowledge` },
+  { key: "memory", label: "Memory", href: (id: string) => `/companies/${id}/memory` },
   { key: "settings", label: "Settings" },
 ] as const;
 
@@ -50,6 +52,8 @@ export default function CompanyPage({
     pipelines: company.pipelines.length,
     issues: company.issues.filter((i) => i.status !== "done").length,
     handoffs: blockedCount,
+    knowledge: (company.skills?.length ?? 0) + (company.sops?.length ?? 0),
+    memory: company.memories.length,
   };
 
   return (
@@ -85,26 +89,44 @@ export default function CompanyPage({
         </div>
 
         <div className="flex border-b border-border-subtle mt-6 mb-6">
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key)}
-              className={cn(
-                "px-4 py-2.5 pb-3 text-[13px] border-b-2 transition-colors",
-                activeTab === tab.key
-                  ? "text-text-primary border-brass"
-                  : "text-text-tertiary border-transparent hover:text-text-secondary"
-              )}
-            >
-              {tab.label}
-              {tabCounts[tab.key] != null && (
-                <span className="ml-1.5 font-mono text-[10px] px-1.5 py-px bg-bg-surface rounded-full text-text-tertiary">
-                  {tabCounts[tab.key]}
-                </span>
-              )}
-            </button>
-          ))}
+          {TABS.map((tab) => {
+            const isActive = activeTab === tab.key;
+            const classes = cn(
+              "px-4 py-2.5 pb-3 text-[13px] border-b-2 transition-colors",
+              isActive
+                ? "text-text-primary border-brass"
+                : "text-text-tertiary border-transparent hover:text-text-secondary"
+            );
+            const content = (
+              <>
+                {tab.label}
+                {tabCounts[tab.key] != null && (
+                  <span className="ml-1.5 font-mono text-[10px] px-1.5 py-px bg-bg-surface rounded-full text-text-tertiary">
+                    {tabCounts[tab.key]}
+                  </span>
+                )}
+              </>
+            );
+
+            if ("href" in tab && tab.href) {
+              return (
+                <Link key={tab.key} href={tab.href(company.id)} className={classes}>
+                  {content}
+                </Link>
+              );
+            }
+
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                className={classes}
+              >
+                {content}
+              </button>
+            );
+          })}
         </div>
 
         {activeTab === "pipelines" && (

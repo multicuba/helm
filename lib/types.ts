@@ -29,6 +29,9 @@ export interface Company {
   daysLeftInMonth?: number;
   stagePills?: string[];
   keyMetric?: { label: string; value: string; sub?: string };
+  skills?: Skill[];
+  brandGuide?: BrandGuide;
+  sops?: SOP[];
 }
 
 export interface StreamItem {
@@ -160,6 +163,85 @@ export interface Memory {
   savedBy: string;
   createdAt: string;
   tags: string[];
+  pipelineRef?: { id: string; label: string };
+  issueRef?: { code: string; title: string };
+  referencedCount?: number;
+  lastAccessedAt?: string;
+  position?: { x: number; y: number };
+}
+
+export type SkillCategory =
+  | "frontend"
+  | "backend"
+  | "ops"
+  | "security"
+  | "seo"
+  | "marketing"
+  | "domain";
+
+export interface Skill {
+  id: string;
+  name: string;
+  category: SkillCategory;
+  description: string;
+  usedByAgentIds: string[];
+  lastUpdatedAt: string;
+  lastUpdatedBy: string;
+  invocationsThisWeek: number;
+}
+
+export interface BrandVoicePrinciple {
+  title: string;
+  detail: string;
+}
+
+export interface BrandColorSwatch {
+  label: string;
+  hex: string;
+  token: string;
+}
+
+export interface BrandTypographySample {
+  label: string;
+  font: "serif" | "sans" | "mono";
+  sample: string;
+  meta: string;
+}
+
+export interface BrandIconSpec {
+  name: string;
+  role: string;
+}
+
+export interface BrandWritingPattern {
+  rule: string;
+  example: string;
+}
+
+export interface BrandGuide {
+  updatedAt: string;
+  updatedBy: string;
+  referencedByAgentIds: string[];
+  voice: BrandVoicePrinciple[];
+  colors: BrandColorSwatch[];
+  typography: BrandTypographySample[];
+  icons: BrandIconSpec[];
+  writing: BrandWritingPattern[];
+}
+
+export interface SOPStep {
+  title: string;
+  detail?: string;
+}
+
+export interface SOP {
+  id: string;
+  title: string;
+  description: string;
+  steps: SOPStep[];
+  linkedAgentIds: string[];
+  triggeredThisMonth: number;
+  lastTriggeredAt?: string;
 }
 
 export interface ActivityEntry {

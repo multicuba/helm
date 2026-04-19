@@ -12,6 +12,9 @@ import type {
   Issue,
   Memory,
   StreamItem,
+  Skill,
+  BrandGuide,
+  SOP,
 } from "./types";
 
 // ───── Agents (reusable templates) ─────
@@ -995,33 +998,740 @@ const emptyStream = (name: string): StreamItem[] => [
 ];
 
 // ───── Memories ─────
-const legacyMemories: Memory[] = [
+const MEMORY_CLUSTER_CENTERS: Record<
+  Memory["type"],
+  { x: number; y: number }
+> = {
+  decision: { x: -280, y: -190 },
+  architecture: { x: 280, y: -190 },
+  learning: { x: -280, y: 210 },
+  bug: { x: 280, y: 210 },
+};
+
+function memoryPosition(
+  type: Memory["type"],
+  typeIndex: number,
+  typeTotal: number
+): { x: number; y: number } {
+  const center = MEMORY_CLUSTER_CENTERS[type];
+  if (typeTotal === 1) return { ...center };
+  const angle = (typeIndex / typeTotal) * Math.PI * 2 - Math.PI / 2;
+  const r = 110 + (typeIndex % 2) * 32;
+  return {
+    x: Math.round(center.x + Math.cos(angle) * r),
+    y: Math.round(center.y + Math.sin(angle) * r),
+  };
+}
+
+function assignMemoryPositions(
+  memories: Omit<Memory, "position">[]
+): Memory[] {
+  const totals: Record<Memory["type"], number> = {
+    decision: 0,
+    bug: 0,
+    architecture: 0,
+    learning: 0,
+  };
+  memories.forEach((m) => {
+    totals[m.type] += 1;
+  });
+  const seen: Record<Memory["type"], number> = {
+    decision: 0,
+    bug: 0,
+    architecture: 0,
+    learning: 0,
+  };
+  return memories.map((m) => {
+    const i = seen[m.type]++;
+    return { ...m, position: memoryPosition(m.type, i, totals[m.type]) };
+  });
+}
+
+const legacyMemoriesRaw: Omit<Memory, "position">[] = [
   {
     id: "m-1",
     title: "Kelly criterion vs modified Sharpe for risk scoring",
     type: "decision",
-    content: "Chose modified Sharpe after benchmarking both. Kelly over-weighted recent drawdowns.",
+    content:
+      "Chose modified Sharpe after benchmarking both on 18mo of paper-traded data. Kelly over-weighted recent drawdowns — Bryan's profile flipped between conservative/aggressive every 2 weeks. Sharpe with 90d rolling window stabilizes the score.",
     savedBy: "CEO Agent",
     createdAt: "2026-04-17T15:00:00Z",
     tags: ["profiler", "risk", "architecture"],
+    pipelineRef: { id: "pl-profiler", label: "Bryan AI — Profiler v3" },
+    referencedCount: 14,
+    lastAccessedAt: "2026-04-18T22:00:00Z",
   },
   {
     id: "m-2",
     title: "WebSocket flakiness on Safari mobile",
     type: "bug",
-    content: "Safari drops idle WebSockets after 60s. Implemented keepalive ping.",
+    content:
+      "Safari iOS 17+ drops idle WebSockets after 60s even with keepalive headers. Fix: client-side ping every 30s, exponential reconnect on close. Affected the live P&L panel on iPad specifically.",
     savedBy: "Frontend Agent",
     createdAt: "2026-04-16T12:00:00Z",
     tags: ["safari", "websocket", "dashboard"],
+    pipelineRef: { id: "pl-dashboard", label: "Dashboard — live P&L" },
+    issueRef: { code: "LT-251", title: "iPad: P&L freezes after ~1min" },
+    referencedCount: 8,
+    lastAccessedAt: "2026-04-18T09:12:00Z",
   },
   {
     id: "m-3",
     title: "Clerk → NextAuth migration aborted",
     type: "decision",
-    content: "2 security findings on JWT handling. Revert until Security Agent approves.",
+    content:
+      "2 security findings on JWT handling: (1) refresh tokens persisted in localStorage, (2) no rotation on privilege change. Revert to Clerk until Security Agent approves new design. Salvador has veto until re-review.",
     savedBy: "Salvador",
     createdAt: "2026-04-15T16:00:00Z",
     tags: ["auth", "security", "rollback"],
+    pipelineRef: { id: "pl-auth", label: "Auth: Clerk → NextAuth" },
+    referencedCount: 21,
+    lastAccessedAt: "2026-04-18T17:45:00Z",
+  },
+  {
+    id: "m-4",
+    title: "Postgres options-greek cache: materialized view, refresh every 15m",
+    type: "architecture",
+    content:
+      "Pre-compute delta/gamma/vega/theta in a materialized view keyed by (symbol, expiry, strike). Refresh on cron every 15min during market hours, full recompute nightly. Avoids hitting the options vendor on every P&L tick.",
+    savedBy: "Backend Agent",
+    createdAt: "2026-04-14T11:30:00Z",
+    tags: ["postgres", "options", "performance"],
+    pipelineRef: { id: "pl-dashboard", label: "Dashboard — live P&L" },
+    referencedCount: 6,
+    lastAccessedAt: "2026-04-17T14:00:00Z",
+  },
+  {
+    id: "m-5",
+    title: "Playwright flake: ResizeObserver loop on chart mount",
+    type: "bug",
+    content:
+      "E2E failed intermittently on Firefox when mounting the P&L chart. Root cause: recharts triggers ResizeObserver during measurement. Wrapped the mount in a raf + added `waitForFunction('window.__chartReady')` hook.",
+    savedBy: "QA Agent",
+    createdAt: "2026-04-13T18:00:00Z",
+    tags: ["playwright", "flake", "chart"],
+    referencedCount: 4,
+    lastAccessedAt: "2026-04-16T10:20:00Z",
+  },
+  {
+    id: "m-6",
+    title: "Daniel's voice: never use 'we' in external copy",
+    type: "learning",
+    content:
+      "Rejected 3 marketing drafts because they used 'we'. Operator tone = 'Helm' or 'you'. Salvador confirmed — this is a hard rule, not a preference. Updated brand guide section 5.",
+    savedBy: "Marketing Agent",
+    createdAt: "2026-04-12T20:00:00Z",
+    tags: ["brand", "copy", "voice"],
+    referencedCount: 11,
+    lastAccessedAt: "2026-04-18T08:30:00Z",
+  },
+  {
+    id: "m-7",
+    title: "Bilingual chat: switch happens on user lang, not agent",
+    type: "decision",
+    content:
+      "Concierge agent defaulted to English even when Daniel typed in Spanish. Fix: detect per-message language via first-token heuristic, mirror it in response. ES/EN switch natural — no forced translation.",
+    savedBy: "CEO Agent",
+    createdAt: "2026-04-11T14:00:00Z",
+    tags: ["bilingual", "es-en", "ux"],
+    referencedCount: 9,
+    lastAccessedAt: "2026-04-17T21:15:00Z",
+  },
+  {
+    id: "m-8",
+    title: "Vercel preview URLs must be password-protected",
+    type: "learning",
+    content:
+      "Security Agent flagged that anon preview links leaked staging data to crawlers. Now: every preview deploy gated by Vercel password protection, rotated weekly. DevOps owns the rotation.",
+    savedBy: "Security Agent",
+    createdAt: "2026-04-10T09:00:00Z",
+    tags: ["vercel", "security", "staging"],
+    referencedCount: 5,
+    lastAccessedAt: "2026-04-15T16:00:00Z",
+  },
+  {
+    id: "m-9",
+    title: "React 19 Actions: don't mix with Zustand in same component",
+    type: "architecture",
+    content:
+      "Tried to combine useActionState with Zustand store updates — caused double renders and stale closure bugs. Rule: Actions for server-boundary forms, Zustand for client cache, never both in the same tree.",
+    savedBy: "Frontend Agent",
+    createdAt: "2026-04-09T13:00:00Z",
+    tags: ["react-19", "actions", "zustand"],
+    referencedCount: 7,
+    lastAccessedAt: "2026-04-16T11:45:00Z",
+  },
+  {
+    id: "m-10",
+    title: "PR handoff notes: required format locked in",
+    type: "decision",
+    content:
+      "Every phase handoff must include: (1) what was done, (2) what's next, (3) open questions, (4) memories created this phase. QA rejects handoffs missing any of the four. Enforced in PR template.",
+    savedBy: "QA Agent",
+    createdAt: "2026-04-08T17:00:00Z",
+    tags: ["sdd", "handoff", "process"],
+    referencedCount: 18,
+    lastAccessedAt: "2026-04-18T19:00:00Z",
+  },
+  {
+    id: "m-11",
+    title: "Options vendor rate limit: 300 req/min, use batching",
+    type: "learning",
+    content:
+      "Hit vendor rate limit during backtest. They only allow 300 symbols/min. Backend agent now batches option-chain fetches into groups of 50 with 10s spacing. Postmortem saved to Engram.",
+    savedBy: "Backend Agent",
+    createdAt: "2026-04-07T10:00:00Z",
+    tags: ["api", "rate-limit", "options"],
+    referencedCount: 3,
+    lastAccessedAt: "2026-04-14T12:00:00Z",
+  },
+  {
+    id: "m-12",
+    title: "Modified Sharpe formula — exact coefficients",
+    type: "architecture",
+    content:
+      "Final formula: (mean_excess_return / stddev) * (1 - 0.3 * max_drawdown_ratio). The 0.3 drawdown penalty came from fitting to Salvador's 2022-2024 live track record. Don't tweak without re-benchmarking.",
+    savedBy: "CEO Agent",
+    createdAt: "2026-04-06T15:30:00Z",
+    tags: ["profiler", "formula", "risk"],
+    pipelineRef: { id: "pl-profiler", label: "Bryan AI — Profiler v3" },
+    referencedCount: 22,
+    lastAccessedAt: "2026-04-18T22:30:00Z",
+  },
+  {
+    id: "m-13",
+    title: "Score recompute cadence: nightly batch + intraday deltas",
+    type: "decision",
+    content:
+      "Full rescore runs at 02:30 UTC; intraday ticks update only the volatility band and exposure ratio, not the core Sharpe. Keeps Postgres CPU under 40% during market hours and avoids flicker in Bryan's portfolio view.",
+    savedBy: "CEO Agent",
+    createdAt: "2026-04-05T14:00:00Z",
+    tags: ["profiler", "performance", "risk"],
+    pipelineRef: { id: "pl-profiler", label: "Bryan AI — Profiler v3" },
+    referencedCount: 9,
+    lastAccessedAt: "2026-04-18T20:10:00Z",
+  },
+  {
+    id: "m-14",
+    title: "MFA required for accounts above $50k AUM",
+    type: "decision",
+    content:
+      "Threshold came from Salvador's compliance risk sheet. TOTP mandatory, WebAuthn optional. Accounts below the line can opt in — UI nudges every 30 days but never blocks.",
+    savedBy: "Security Agent",
+    createdAt: "2026-04-04T11:00:00Z",
+    tags: ["auth", "security", "mfa"],
+    pipelineRef: { id: "pl-auth", label: "Auth: Clerk → NextAuth" },
+    referencedCount: 16,
+    lastAccessedAt: "2026-04-18T21:05:00Z",
+  },
+  {
+    id: "m-15",
+    title: "Session: 2h sliding window, 12h hard ceiling",
+    type: "decision",
+    content:
+      "Sliding session refreshes on any authenticated request; absolute cap of 12h forces re-auth once per trading day. Aligns with FINRA guidance and matches Schwab's defaults. Salvador approved.",
+    savedBy: "Security Agent",
+    createdAt: "2026-04-03T09:30:00Z",
+    tags: ["auth", "security", "session"],
+    pipelineRef: { id: "pl-auth", label: "Auth: Clerk → NextAuth" },
+    referencedCount: 11,
+    lastAccessedAt: "2026-04-18T15:40:00Z",
+  },
+  {
+    id: "m-16",
+    title: "iPad landscape: 3-column P&L + order ticket side panel",
+    type: "decision",
+    content:
+      "Portrait collapses to single-column; landscape keeps P&L, positions table, and a 320px order ticket. Decision driven by Bryan's screen usage — 82% landscape during market hours. Breakpoints locked at 1024px / 1366px.",
+    savedBy: "Frontend Agent",
+    createdAt: "2026-04-02T17:20:00Z",
+    tags: ["dashboard", "ipad", "layout"],
+    pipelineRef: { id: "pl-dashboard", label: "Dashboard — live P&L" },
+    referencedCount: 5,
+    lastAccessedAt: "2026-04-17T19:55:00Z",
+  },
+  {
+    id: "m-17",
+    title: "Scorer crashes on bond-only portfolios",
+    type: "bug",
+    content:
+      "NaN propagates when options exposure ratio denominator is zero. Patch: return baseline score with a flag when no equity/options present. Caught during paper-trade of a pure fixed-income profile.",
+    savedBy: "Backend Agent",
+    createdAt: "2026-04-06T10:00:00Z",
+    tags: ["profiler", "crash", "bonds"],
+    pipelineRef: { id: "pl-profiler", label: "Bryan AI — Profiler v3" },
+    issueRef: { code: "LT-278", title: "Scorer throws NaN on bond-only accounts" },
+    referencedCount: 6,
+    lastAccessedAt: "2026-04-18T11:15:00Z",
+  },
+  {
+    id: "m-18",
+    title: "Session cookie leaked via Vercel preview Referer header",
+    type: "bug",
+    content:
+      "Preview deploy had no password gate; outbound links to third-party charts forwarded Referer including session_id fragment. Fixed by (1) enabling preview password, (2) stripping session_id from URL hash client-side on load.",
+    savedBy: "Security Agent",
+    createdAt: "2026-04-03T13:45:00Z",
+    tags: ["auth", "security", "vercel"],
+    pipelineRef: { id: "pl-auth", label: "Auth: Clerk → NextAuth" },
+    issueRef: { code: "LT-266", title: "Preview deploy leaks session_id via Referer" },
+    referencedCount: 12,
+    lastAccessedAt: "2026-04-18T18:30:00Z",
+  },
+  {
+    id: "m-19",
+    title: "Event sourcing for portfolio history, 24h snapshots",
+    type: "architecture",
+    content:
+      "Every position change emits an event to portfolio_events. Nightly snapshot materializes to portfolio_state. Replay from any snapshot reconstructs exact history — essential for audit and performance attribution.",
+    savedBy: "Backend Agent",
+    createdAt: "2026-04-05T09:00:00Z",
+    tags: ["event-sourcing", "postgres", "audit"],
+    referencedCount: 13,
+    lastAccessedAt: "2026-04-18T14:00:00Z",
+  },
+  {
+    id: "m-20",
+    title: "Feature flags via Vercel Edge Config, 50ms TTL",
+    type: "architecture",
+    content:
+      "Sub-100ms reads at the edge. Fallback to last-known flags if edge misses. Flag changes propagate globally in under 10s. Don't put user-specific rules here — only global kill-switches.",
+    savedBy: "Backend Agent",
+    createdAt: "2026-04-04T16:00:00Z",
+    tags: ["vercel", "feature-flags", "performance"],
+    referencedCount: 7,
+    lastAccessedAt: "2026-04-17T10:20:00Z",
+  },
+  {
+    id: "m-21",
+    title: "Options-chain CDN cache, 30s TTL, varies by symbol",
+    type: "architecture",
+    content:
+      "Cloudflare Workers fronting the options vendor. 30s TTL during market hours, 5min after close. Cache key = symbol + expiry bucket. Cut vendor traffic 68% without noticeable staleness in the P&L panel.",
+    savedBy: "Backend Agent",
+    createdAt: "2026-04-03T15:30:00Z",
+    tags: ["options", "performance", "dashboard"],
+    pipelineRef: { id: "pl-dashboard", label: "Dashboard — live P&L" },
+    referencedCount: 10,
+    lastAccessedAt: "2026-04-18T13:45:00Z",
+  },
+  {
+    id: "m-22",
+    title: "Audit log: append-only Postgres, S3 cold after 90d",
+    type: "architecture",
+    content:
+      "All mutations write an append-only audit row (actor, action, before, after, timestamp). Rotate to S3 Glacier after 90 days. Read path for recent audits goes to hot table; historical lookup via Athena.",
+    savedBy: "Backend Agent",
+    createdAt: "2026-04-02T11:00:00Z",
+    tags: ["audit", "postgres", "security"],
+    referencedCount: 8,
+    lastAccessedAt: "2026-04-16T09:30:00Z",
+  },
+  {
+    id: "m-23",
+    title: "Workflow rules in YAML, hot-reload in dev",
+    type: "architecture",
+    content:
+      "Agent workflows declared in /workflows/*.yaml. Boot-time validation via Zod. Dev reloads on save; prod requires explicit deploy. Keeps non-engineers (ops, compliance) able to tweak routing without opening a PR.",
+    savedBy: "Backend Agent",
+    createdAt: "2026-04-01T14:15:00Z",
+    tags: ["workflow", "yaml", "architecture"],
+    referencedCount: 4,
+    lastAccessedAt: "2026-04-15T08:00:00Z",
+  },
+  {
+    id: "m-24",
+    title: "Analytics via dedicated Postgres read replica, 15s lag ok",
+    type: "architecture",
+    content:
+      "All heavy BI queries routed to replica.lt-prod.db. Primary stays <30% CPU. 15s replication lag is fine for analytics; anything needing sub-second freshness hits primary with a label override.",
+    savedBy: "Backend Agent",
+    createdAt: "2026-03-31T10:00:00Z",
+    tags: ["postgres", "analytics", "performance"],
+    referencedCount: 6,
+    lastAccessedAt: "2026-04-14T12:00:00Z",
+  },
+  {
+    id: "m-25",
+    title: "Chart library rule: Recharts only, never Chart.js",
+    type: "learning",
+    content:
+      "Chart.js pulls canvas + full chart types (~120KB gzipped). Recharts tree-shakes down to what you import. On the P&L panel we ship 14KB of Recharts vs ~95KB of Chart.js for the same visual. Locked in.",
+    savedBy: "Frontend Agent",
+    createdAt: "2026-04-05T18:00:00Z",
+    tags: ["chart", "dashboard", "bundle-size"],
+    pipelineRef: { id: "pl-dashboard", label: "Dashboard — live P&L" },
+    referencedCount: 9,
+    lastAccessedAt: "2026-04-18T12:10:00Z",
+  },
+  {
+    id: "m-26",
+    title: "OWASP ASVS Level 2 is the compliance bar",
+    type: "learning",
+    content:
+      "All user-facing services must pass ASVS L2 checks before promotion to prod. Security Agent runs the checklist on every pipeline; failures block the verify phase. L3 reserved for anything handling fund movement.",
+    savedBy: "Security Agent",
+    createdAt: "2026-04-02T09:00:00Z",
+    tags: ["security", "compliance", "auth"],
+    pipelineRef: { id: "pl-auth", label: "Auth: Clerk → NextAuth" },
+    referencedCount: 14,
+    lastAccessedAt: "2026-04-18T16:45:00Z",
+  },
+];
+
+const legacyMemories: Memory[] = assignMemoryPositions(legacyMemoriesRaw);
+
+// ───── Skills (Knowledge) ─────
+const legacySkills: Skill[] = [
+  {
+    id: "sk-react-19",
+    name: "react-19-patterns",
+    category: "frontend",
+    description: "Actions, useActionState, useOptimistic, server-component boundaries.",
+    usedByAgentIds: ["lt-fe", "lt-qa"],
+    lastUpdatedAt: "2026-04-16T10:00:00Z",
+    lastUpdatedBy: "Daniel",
+    invocationsThisWeek: 47,
+  },
+  {
+    id: "sk-nextjs-15",
+    name: "nextjs-15-app-router",
+    category: "frontend",
+    description: "App Router conventions, parallel routes, intercepting routes, streaming.",
+    usedByAgentIds: ["lt-fe", "lt-be"],
+    lastUpdatedAt: "2026-04-15T09:00:00Z",
+    lastUpdatedBy: "Daniel",
+    invocationsThisWeek: 38,
+  },
+  {
+    id: "sk-tailwind-4",
+    name: "tailwind-4-tokens",
+    category: "frontend",
+    description: "@theme tokens, custom colors, OKLCH migration, v4 utility classes.",
+    usedByAgentIds: ["lt-fe"],
+    lastUpdatedAt: "2026-04-14T14:00:00Z",
+    lastUpdatedBy: "Daniel",
+    invocationsThisWeek: 22,
+  },
+  {
+    id: "sk-typescript-strict",
+    name: "typescript-strict",
+    category: "frontend",
+    description: "strict: true, noUncheckedIndexedAccess, satisfies, const-assertions.",
+    usedByAgentIds: ["lt-fe", "lt-be", "lt-qa"],
+    lastUpdatedAt: "2026-04-10T11:00:00Z",
+    lastUpdatedBy: "Backend Agent",
+    invocationsThisWeek: 31,
+  },
+  {
+    id: "sk-playwright",
+    name: "playwright-e2e",
+    category: "frontend",
+    description: "Multi-browser, trace viewer, network stubbing, visual regression.",
+    usedByAgentIds: ["lt-qa"],
+    lastUpdatedAt: "2026-04-12T16:00:00Z",
+    lastUpdatedBy: "QA Agent",
+    invocationsThisWeek: 15,
+  },
+  {
+    id: "sk-postgres",
+    name: "postgres-schemas",
+    category: "backend",
+    description: "Materialized views, partitioning, row-level security, explain analyze.",
+    usedByAgentIds: ["lt-be"],
+    lastUpdatedAt: "2026-04-14T11:00:00Z",
+    lastUpdatedBy: "Backend Agent",
+    invocationsThisWeek: 19,
+  },
+  {
+    id: "sk-oauth",
+    name: "oauth-flows",
+    category: "security",
+    description: "PKCE, refresh-token rotation, scopes, token binding.",
+    usedByAgentIds: ["lt-be", "lt-sec"],
+    lastUpdatedAt: "2026-04-15T10:00:00Z",
+    lastUpdatedBy: "Security Agent",
+    invocationsThisWeek: 8,
+  },
+  {
+    id: "sk-websocket",
+    name: "websocket-scaling",
+    category: "backend",
+    description: "Sticky sessions, Redis pub/sub, keepalive, graceful reconnect.",
+    usedByAgentIds: ["lt-be", "lt-fe"],
+    lastUpdatedAt: "2026-04-16T08:00:00Z",
+    lastUpdatedBy: "Backend Agent",
+    invocationsThisWeek: 12,
+  },
+  {
+    id: "sk-kelly",
+    name: "kelly-criterion-risk-scoring",
+    category: "domain",
+    description: "Fractional Kelly, drawdown-penalized variants, portfolio allocation sizing.",
+    usedByAgentIds: ["lt-ceo", "lt-be"],
+    lastUpdatedAt: "2026-04-17T14:00:00Z",
+    lastUpdatedBy: "CEO Agent",
+    invocationsThisWeek: 6,
+  },
+  {
+    id: "sk-greeks",
+    name: "options-greek-calculations",
+    category: "domain",
+    description: "Delta, gamma, vega, theta, rho — Black-Scholes and binomial models.",
+    usedByAgentIds: ["lt-be", "lt-ceo"],
+    lastUpdatedAt: "2026-04-14T11:30:00Z",
+    lastUpdatedBy: "Backend Agent",
+    invocationsThisWeek: 4,
+  },
+  {
+    id: "sk-sharpe",
+    name: "modified-sharpe-ratio",
+    category: "domain",
+    description: "Drawdown-penalized Sharpe, rolling windows, regime-aware coefficients.",
+    usedByAgentIds: ["lt-ceo"],
+    lastUpdatedAt: "2026-04-17T15:00:00Z",
+    lastUpdatedBy: "CEO Agent",
+    invocationsThisWeek: 9,
+  },
+  {
+    id: "sk-secrets",
+    name: "secrets-hygiene",
+    category: "security",
+    description: "No secrets in repo, rotated weekly, per-env vaults, audit on every PR.",
+    usedByAgentIds: ["lt-sec", "lt-ops"],
+    lastUpdatedAt: "2026-04-10T09:00:00Z",
+    lastUpdatedBy: "Security Agent",
+    invocationsThisWeek: 17,
+  },
+  {
+    id: "sk-pr-review",
+    name: "pr-review-checklist",
+    category: "ops",
+    description: "Tests pass, security scan clean, brand adherence, handoff notes complete.",
+    usedByAgentIds: ["lt-qa", "lt-sec", "lt-ops"],
+    lastUpdatedAt: "2026-04-11T09:00:00Z",
+    lastUpdatedBy: "QA Agent",
+    invocationsThisWeek: 28,
+  },
+  {
+    id: "sk-commits",
+    name: "commit-message-conventions",
+    category: "ops",
+    description: "Conventional commits, scope prefixes, body explains why not what.",
+    usedByAgentIds: ["lt-fe", "lt-be", "lt-ops"],
+    lastUpdatedAt: "2026-04-08T14:00:00Z",
+    lastUpdatedBy: "DevOps Agent",
+    invocationsThisWeek: 52,
+  },
+  {
+    id: "sk-brand-voice",
+    name: "daniel-brand-voice-es-en",
+    category: "marketing",
+    description: "Operator tone, em-dashes for asides, bilingual aware, never 'we'.",
+    usedByAgentIds: ["lt-ceo", "lt-seo"],
+    lastUpdatedAt: "2026-04-12T20:00:00Z",
+    lastUpdatedBy: "Daniel",
+    invocationsThisWeek: 14,
+  },
+];
+
+// ───── Brand Guide (Knowledge) ─────
+const legacyBrandGuide: BrandGuide = {
+  updatedAt: "2026-04-17T10:00:00Z",
+  updatedBy: "Daniel",
+  referencedByAgentIds: ["lt-ceo", "lt-fe", "lt-seo"],
+  voice: [
+    {
+      title: "Direct, no corporate fluff",
+      detail: "Say the thing. No 'leverage synergies' — just the verb that matches the action.",
+    },
+    {
+      title: "Bilingual aware (ES/EN)",
+      detail: "Switch natural. Spanish for internal ops, English for product copy and external.",
+    },
+    {
+      title: "Operator-to-operator",
+      detail: "Never expert-to-beginner. The reader already runs their own company.",
+    },
+    {
+      title: "Respect attention",
+      detail: "Lead with the outcome. If the first sentence could be deleted, delete it.",
+    },
+    {
+      title: "Show numbers when they matter",
+      detail: "'47 issues closed' beats 'many issues closed'. Concrete > vague.",
+    },
+  ],
+  colors: [
+    { label: "Deep", hex: "#0c0a08", token: "bg-deep" },
+    { label: "Page", hex: "#110f0c", token: "bg-page" },
+    { label: "Surface", hex: "#1a1713", token: "bg-surface" },
+    { label: "Elevated", hex: "#2a241d", token: "bg-elevated" },
+    { label: "Brass", hex: "#c89b5e", token: "brass" },
+    { label: "Brass bright", hex: "#e5b87a", token: "brass-bright" },
+    { label: "Brass muted", hex: "#8a6d43", token: "brass-muted" },
+    { label: "Teal", hex: "#4a7a82", token: "teal" },
+    { label: "Success", hex: "#7ba05b", token: "success" },
+    { label: "Warning", hex: "#d4a23e", token: "warning" },
+    { label: "Danger", hex: "#c26b55", token: "danger" },
+  ],
+  typography: [
+    {
+      label: "Display serif",
+      font: "serif",
+      sample: "Pipelines in flight.",
+      meta: "Fraunces · weight 300 · tracking -0.025em",
+    },
+    {
+      label: "Display italic",
+      font: "serif",
+      sample: "What your agents know.",
+      meta: "Fraunces italic · weight 400 · tracking -0.02em",
+    },
+    {
+      label: "UI body",
+      font: "sans",
+      sample: "Direct, no corporate fluff. Say the thing.",
+      meta: "Inter Tight · 14px · tracking -0.01em",
+    },
+    {
+      label: "Mono meta",
+      font: "mono",
+      sample: "STARTED 2d AGO · PR #247 · DANIEL",
+      meta: "JetBrains Mono · 11px · tracking 0.02em",
+    },
+    {
+      label: "Mono label",
+      font: "mono",
+      sample: "PHASE TIMELINE",
+      meta: "JetBrains Mono · 10px · tracking 0.15em · uppercase",
+    },
+  ],
+  icons: [
+    { name: "Home", role: "Command center" },
+    { name: "GitBranch", role: "Activity / branches" },
+    { name: "Layers", role: "Knowledge" },
+    { name: "MessageSquare", role: "Helm Chat" },
+    { name: "BarChart3", role: "Reports" },
+    { name: "ChevronRight", role: "Breadcrumbs / drill-in" },
+    { name: "CheckCircle2", role: "Done / success" },
+    { name: "AlertTriangle", role: "Attention / blocked" },
+    { name: "Clock", role: "Pending / queued" },
+    { name: "Github", role: "PR / repo" },
+  ],
+  writing: [
+    {
+      rule: "Use em-dashes for asides, not commas",
+      example: "The profiler — rebuilt last month — now uses modified Sharpe.",
+    },
+    {
+      rule: "Avoid 'we' — use 'Helm' or 'you'",
+      example: "Helm watches every pipeline. You approve what ships.",
+    },
+    {
+      rule: "Numbers: cardinal under 10, digits over",
+      example: "Three agents are idle. 47 issues closed this month.",
+    },
+    {
+      rule: "Bilingual: ES for internal ops, EN for product copy",
+      example: "Internal: 'Dale, mandá el handoff'. Product: 'Ship the handoff.'",
+    },
+    {
+      rule: "No exclamation marks, ever",
+      example: "'Pipeline done.' not 'Pipeline done!'",
+    },
+  ],
+};
+
+// ───── SOPs (Knowledge) ─────
+const legacySOPs: SOP[] = [
+  {
+    id: "sop-deploy",
+    title: "Deploy Process",
+    description: "From PR open to production, the six-gate path.",
+    linkedAgentIds: ["lt-be", "lt-qa", "lt-sec", "lt-ops"],
+    triggeredThisMonth: 12,
+    lastTriggeredAt: "2026-04-18T16:00:00Z",
+    steps: [
+      { title: "Code review", detail: "Backend or Frontend agent reviews the diff, checks patterns." },
+      { title: "QA sign-off", detail: "Playwright e2e green on Chrome, Firefox, Safari." },
+      { title: "Security scan", detail: "Security agent runs dep audit + secrets scan, must be clean." },
+      { title: "Staging deploy", detail: "Auto-deploy to preview URL, password-protected." },
+      { title: "Smoke test", detail: "3 critical paths exercised manually or by smoke script." },
+      { title: "Prod rollout", detail: "Canary 10% → full. Rollback ready, DevOps on call." },
+    ],
+  },
+  {
+    id: "sop-pr-review",
+    title: "PR Review Checklist",
+    description: "Every PR, every time. No exceptions — ever.",
+    linkedAgentIds: ["lt-qa", "lt-sec"],
+    triggeredThisMonth: 28,
+    lastTriggeredAt: "2026-04-18T21:00:00Z",
+    steps: [
+      { title: "Tests pass", detail: "pnpm typecheck && pnpm build && pnpm test:e2e all green." },
+      { title: "Security scan clean", detail: "No new secrets, no new vulnerable deps." },
+      { title: "Brand guide adherence", detail: "Copy matches voice, colors match tokens." },
+      { title: "Handoff notes complete", detail: "Four sections: done, next, questions, memories." },
+      { title: "Linked memories created", detail: "Every non-obvious decision gets an Engram entry." },
+    ],
+  },
+  {
+    id: "sop-agent-onboarding",
+    title: "Agent Onboarding",
+    description: "Spinning up a new agent inside an existing company.",
+    linkedAgentIds: ["lt-ceo"],
+    triggeredThisMonth: 2,
+    lastTriggeredAt: "2026-04-11T09:00:00Z",
+    steps: [
+      { title: "Load persona from Knowledge", detail: "Pull role definition and skill list." },
+      { title: "Load relevant skills", detail: "Category-matched skills auto-attached." },
+      { title: "Seed memories from past similar tasks", detail: "Top 10 memories by tag relevance." },
+      { title: "Intro call with CEO agent", detail: "Two-turn handshake confirming scope and budget." },
+    ],
+  },
+  {
+    id: "sop-incident",
+    title: "Incident Response",
+    description: "Prod broke. Here's the five-step lane.",
+    linkedAgentIds: ["lt-ops", "lt-be", "lt-sec"],
+    triggeredThisMonth: 1,
+    lastTriggeredAt: "2026-04-13T02:30:00Z",
+    steps: [
+      { title: "Detect", detail: "Alert fires or user reports. Page on-call agent + Daniel." },
+      { title: "Isolate", detail: "Identify blast radius. Flip feature flag if possible." },
+      { title: "Rollback", detail: "Revert to last known good deploy. Confirm recovery." },
+      { title: "Investigate", detail: "Root cause. Repro locally. Write fix on branch." },
+      { title: "Postmortem", detail: "Blameless. Memory saved to Engram on resolution." },
+    ],
+  },
+  {
+    id: "sop-quality",
+    title: "Code Quality Gates",
+    description: "Four machines that must say yes before merge.",
+    linkedAgentIds: ["lt-qa", "lt-fe", "lt-be"],
+    triggeredThisMonth: 34,
+    lastTriggeredAt: "2026-04-18T20:10:00Z",
+    steps: [
+      { title: "pnpm typecheck", detail: "Zero errors. No 'any' escapes unless justified in comment." },
+      { title: "pnpm build", detail: "Next.js build green, no warnings flagged as errors." },
+      { title: "playwright e2e", detail: "Full suite on Chrome + Firefox + Safari." },
+      { title: "No console.errors", detail: "Dev-server run, exercise golden path, check console." },
+    ],
+  },
+  {
+    id: "sop-bilingual-support",
+    title: "Bilingual Customer Support",
+    description: "Flagler BNB playbook, applicable to any customer-facing support.",
+    linkedAgentIds: ["lt-seo"],
+    triggeredThisMonth: 6,
+    lastTriggeredAt: "2026-04-17T18:00:00Z",
+    steps: [
+      { title: "Respond in <90s", detail: "First-touch latency is the #1 driver of NPS." },
+      { title: "Tone: warm but precise", detail: "No fake empathy. Just acknowledge + solve." },
+      { title: "Match guest language", detail: "ES/EN detected per message. Mirror, don't translate." },
+      { title: "Escalate to human if >2 turns", detail: "Loop Salvador or Daniel on the third reply." },
+    ],
   },
 ];
 
@@ -1053,6 +1763,9 @@ export const seedCompanies: Company[] = [
     issues: legacyIssues,
     memories: legacyMemories,
     streamItems: legacyStreamItems,
+    skills: legacySkills,
+    brandGuide: legacyBrandGuide,
+    sops: legacySOPs,
     todaySpend: 38.12,
     yesterdaySpend: 48.90,
     daysLeftInMonth: 12,
