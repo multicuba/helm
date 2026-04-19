@@ -119,7 +119,7 @@ export default function CompanyPage({
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.35, delay: i * 0.06 }}
                 >
-                  <SDDPipeline pipeline={p} demoMode={demoMode} />
+                  <SDDPipeline pipeline={p} demoMode={demoMode} companyId={company.id} />
                 </motion.div>
               ))
             )}
