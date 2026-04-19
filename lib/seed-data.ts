@@ -3094,6 +3094,894 @@ const legacySOPs: SOP[] = [
   },
 ];
 
+// ───── Per-company issue rosters (phase 3) ─────
+const multiTopupIssues: Issue[] = [
+  {
+    id: "mt-101",
+    code: "MT-101",
+    title: "Onboarding flow — phone verification fallback",
+    subtitle: "SMS provider drops EU numbers · need email backup",
+    description: `## Problem
+
+Twilio's SMS delivery to EU phone numbers is unreliable (~12% failure). Users can't complete onboarding.
+
+## Fix
+
+- Add an **email verification** option after the second SMS retry fails
+- Persist verification state in \`auth.verifications\` so retries don't restart
+- Surface a clear "didn't receive a code?" link
+
+\`\`\`ts
+if (smsAttempts >= 2 && !verified) {
+  await sendVerificationEmail(user.email);
+  return { fallback: "email" };
+}
+\`\`\``,
+    status: "in-progress",
+    assigneeAgentId: "mt-be",
+    assigneeLabel: "BE",
+    assigneeColor: "teal",
+    costSoFar: 5.20,
+    createdAt: "2026-04-17T10:00:00Z",
+    updatedAt: "2026-04-19T08:30:00Z",
+    priority: "p1",
+    labels: ["onboarding", "auth", "backend"],
+    agentTimeMinutes: 145,
+    tokenCostUsd: 2.90,
+    createdBy: { id: "daniel", label: "Daniel", kind: "human" },
+    lastUpdatedBy: { id: "mt-be", label: "Backend Agent", kind: "agent" },
+    activity: [
+      {
+        id: "mt-101-a-1",
+        type: "created",
+        actorId: "daniel",
+        actorType: "human",
+        actorLabel: "Daniel",
+        timestamp: "2026-04-17T10:00:00Z",
+        description: "filed after support raised the issue.",
+      },
+      {
+        id: "mt-101-a-2",
+        type: "assigned",
+        actorId: "mt-ceo",
+        actorType: "agent",
+        actorLabel: "CEO Agent",
+        timestamp: "2026-04-17T10:14:00Z",
+        description: "routed to Backend Agent.",
+      },
+      {
+        id: "mt-101-a-3",
+        type: "commit_pushed",
+        actorId: "mt-be",
+        actorType: "agent",
+        actorLabel: "Backend Agent",
+        timestamp: "2026-04-18T09:18:00Z",
+        description: "added email fallback path.",
+        meta: {
+          commitSha: "44ab12c0e9b30055",
+          files: ["lib/auth/verify.ts", "app/onboarding/code/page.tsx"],
+        },
+      },
+      {
+        id: "mt-101-a-4",
+        type: "commented",
+        actorId: "mt-qa",
+        actorType: "agent",
+        actorLabel: "QA Agent",
+        timestamp: "2026-04-18T16:00:00Z",
+        description: "tested the fallback.",
+        meta: { comment: "Email fallback works. Resend cooldown still 60s — feels long for users." },
+      },
+      {
+        id: "mt-101-a-5",
+        type: "commit_pushed",
+        actorId: "mt-be",
+        actorType: "agent",
+        actorLabel: "Backend Agent",
+        timestamp: "2026-04-19T08:30:00Z",
+        description: "shortened cooldown to 30s.",
+        meta: {
+          commitSha: "9ba7e08c4d215566",
+          files: ["lib/auth/verify.ts"],
+        },
+      },
+    ],
+    codeChanges: [
+      {
+        filename: "lib/auth/verify.ts",
+        status: "M",
+        linesAdded: 38,
+        linesRemoved: 6,
+        diffSnippet: `--- a/lib/auth/verify.ts
++++ b/lib/auth/verify.ts
+@@ -10,6 +10,38 @@
+ export async function verifyPhone(user: User, code: string) {
++  const attempts = await db.verifications.count({
++    where: { userId: user.id, channel: "sms" },
++  });
++
++  if (attempts >= 2 && !user.phoneVerified) {
++    await sendVerificationEmail(user.email);
++    return { fallback: "email", cooldownSec: 30 };
++  }
++
+   const ok = await twilio.verify(user.phone, code);
+   if (!ok) throw new Error("invalid_code");
+   await db.user.update({ where: { id: user.id }, data: { phoneVerified: true } });
++  return { ok: true };
+ }`,
+      },
+    ],
+  },
+  {
+    id: "mt-102",
+    code: "MT-102",
+    title: "Topup history — CSV export",
+    subtitle: "Daniel asked for it for accounting",
+    description: `## Goal
+
+Export the topup history table as CSV. Should respect current filter and date range.
+
+- Button next to the existing "Refresh" CTA
+- Filename: \`topups-{from}-to-{to}.csv\`
+- Columns: \`date,carrier,amount,status,reference\``,
+    status: "review",
+    assigneeAgentId: "mt-fe",
+    assigneeLabel: "FE",
+    assigneeColor: "teal",
+    costSoFar: 1.80,
+    createdAt: "2026-04-18T11:30:00Z",
+    updatedAt: "2026-04-19T07:15:00Z",
+    priority: "p2",
+    labels: ["frontend", "export", "ux"],
+    agentTimeMinutes: 60,
+    tokenCostUsd: 1.20,
+    createdBy: { id: "daniel", label: "Daniel", kind: "human" },
+    lastUpdatedBy: { id: "mt-fe", label: "Frontend Agent", kind: "agent" },
+    activity: [
+      {
+        id: "mt-102-a-1",
+        type: "created",
+        actorId: "daniel",
+        actorType: "human",
+        actorLabel: "Daniel",
+        timestamp: "2026-04-18T11:30:00Z",
+        description: "filed the request.",
+      },
+      {
+        id: "mt-102-a-2",
+        type: "commit_pushed",
+        actorId: "mt-fe",
+        actorType: "agent",
+        actorLabel: "Frontend Agent",
+        timestamp: "2026-04-18T15:42:00Z",
+        description: "added export utility + button.",
+        meta: {
+          commitSha: "11dfac98e7305a44",
+          files: ["lib/export/csv.ts", "components/topups/HistoryTable.tsx"],
+        },
+      },
+      {
+        id: "mt-102-a-3",
+        type: "review_requested",
+        actorId: "mt-fe",
+        actorType: "agent",
+        actorLabel: "Frontend Agent",
+        timestamp: "2026-04-19T07:15:00Z",
+        description: "requested review.",
+      },
+    ],
+    codeChanges: [
+      {
+        filename: "lib/export/csv.ts",
+        status: "A",
+        linesAdded: 32,
+        linesRemoved: 0,
+        diffSnippet: `--- /dev/null
++++ b/lib/export/csv.ts
+@@ -0,0 +1,32 @@
++export function toCsv<T extends Record<string, unknown>>(rows: T[], columns: (keyof T)[]) {
++  const header = columns.join(",");
++  const body = rows
++    .map((row) =>
++      columns
++        .map((c) => {
++          const v = row[c];
++          if (v == null) return "";
++          const s = String(v);
++          return s.includes(",") ? \`"\${s.replace(/"/g, '""')}"\` : s;
++        })
++        .join(",")
++    )
++    .join("\\n");
++  return \`\${header}\\n\${body}\\n\`;
++}
++
++export function downloadCsv(filename: string, csv: string) {
++  const blob = new Blob([csv], { type: "text/csv" });
++  const url = URL.createObjectURL(blob);
++  const a = document.createElement("a");
++  a.href = url;
++  a.download = filename;
++  a.click();
++  URL.revokeObjectURL(url);
++}`,
+      },
+    ],
+  },
+  {
+    id: "mt-103",
+    code: "MT-103",
+    title: "Carrier outage banner — auto-dismiss",
+    subtitle: "Banner stays even after carrier recovers",
+    description: `Outage banner shows when carrier health < 50% but doesn't disappear when it recovers.
+
+- Re-poll \`/api/carriers/health\` every 30s
+- Hide the banner once health > 80% for 2 consecutive checks`,
+    status: "queued",
+    assigneeAgentId: "mt-fe",
+    assigneeLabel: "FE",
+    assigneeColor: "teal",
+    costSoFar: 0,
+    createdAt: "2026-04-19T08:00:00Z",
+    priority: "p3",
+    labels: ["frontend", "bug"],
+    agentTimeMinutes: 0,
+    tokenCostUsd: 0,
+  },
+];
+
+const mhIssues: Issue[] = [
+  {
+    id: "mh-201",
+    code: "MH-201",
+    title: "Local SEO — schema markup for service pages",
+    subtitle: "Plumbing + HVAC pages need LocalBusiness JSON-LD",
+    description: `## Why
+
+Local pack visibility for "plumber near me" queries dropped 40% after Google's March update. Adding proper structured data should help.
+
+## Pages to update
+
+- \`/services/plumbing\`
+- \`/services/hvac\`
+- \`/services/electrical\`
+
+\`\`\`json
+{
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "name": "MH Home Solutions",
+  "address": { "@type": "PostalAddress", "addressLocality": "Flagler Beach" }
+}
+\`\`\``,
+    status: "in-progress",
+    assigneeAgentId: "mh-seo",
+    assigneeLabel: "SEO",
+    assigneeColor: "teal",
+    costSoFar: 1.40,
+    createdAt: "2026-04-17T13:00:00Z",
+    updatedAt: "2026-04-19T10:30:00Z",
+    priority: "p1",
+    labels: ["seo", "schema", "local"],
+    agentTimeMinutes: 75,
+    tokenCostUsd: 1.50,
+    createdBy: { id: "mh-ceo", label: "CEO Agent", kind: "agent" },
+    lastUpdatedBy: { id: "mh-seo", label: "SEO Agent", kind: "agent" },
+    activity: [
+      {
+        id: "mh-201-a-1",
+        type: "created",
+        actorId: "mh-ceo",
+        actorType: "agent",
+        actorLabel: "CEO Agent",
+        timestamp: "2026-04-17T13:00:00Z",
+        description: "opened after the SEO weekly report.",
+      },
+      {
+        id: "mh-201-a-2",
+        type: "assigned",
+        actorId: "mh-ceo",
+        actorType: "agent",
+        actorLabel: "CEO Agent",
+        timestamp: "2026-04-17T13:08:00Z",
+        description: "routed to SEO Agent.",
+      },
+      {
+        id: "mh-201-a-3",
+        type: "commit_pushed",
+        actorId: "mh-seo",
+        actorType: "agent",
+        actorLabel: "SEO Agent",
+        timestamp: "2026-04-18T11:24:00Z",
+        description: "added LocalBusiness schema to plumbing + hvac.",
+        meta: {
+          commitSha: "32f1e08bd9e44011",
+          files: [
+            "app/services/plumbing/page.tsx",
+            "app/services/hvac/page.tsx",
+          ],
+        },
+      },
+      {
+        id: "mh-201-a-4",
+        type: "review_completed",
+        actorId: "mh-qa",
+        actorType: "agent",
+        actorLabel: "QA Agent",
+        timestamp: "2026-04-19T10:30:00Z",
+        description: "validated against Google's Rich Results test.",
+      },
+    ],
+    codeChanges: [
+      {
+        filename: "app/services/plumbing/page.tsx",
+        status: "M",
+        linesAdded: 28,
+        linesRemoved: 0,
+        diffSnippet: `--- a/app/services/plumbing/page.tsx
++++ b/app/services/plumbing/page.tsx
+@@ -1,5 +1,33 @@
++const schema = {
++  "@context": "https://schema.org",
++  "@type": "LocalBusiness",
++  "name": "MH Home Solutions — Plumbing",
++  "address": {
++    "@type": "PostalAddress",
++    "streetAddress": "1234 Coastal Hwy",
++    "addressLocality": "Flagler Beach",
++    "addressRegion": "FL",
++    "postalCode": "32136",
++  },
++  "telephone": "+1-386-555-0144",
++  "areaServed": ["Flagler Beach", "Palm Coast", "Bunnell"],
++};
++
+ export default function PlumbingPage() {
+-  return <main>{/* ... */}</main>;
++  return (
++    <>
++      <script
++        type="application/ld+json"
++        dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
++      />
++      <main>{/* ... */}</main>
++    </>
++  );
+ }`,
+      },
+    ],
+  },
+  {
+    id: "mh-202",
+    code: "MH-202",
+    title: "Quote form — bilingual labels (ES/EN)",
+    subtitle: "30% of leads are Spanish speakers",
+    description: `Add Spanish translations to the quote form. Auto-detect from \`Accept-Language\`, allow manual toggle.
+
+Fields to translate: name, phone, service type, preferred date, notes.`,
+    status: "review",
+    assigneeAgentId: "mh-mkt",
+    assigneeLabel: "M",
+    assigneeColor: "success",
+    costSoFar: 2.40,
+    createdAt: "2026-04-18T09:00:00Z",
+    updatedAt: "2026-04-19T11:00:00Z",
+    priority: "p2",
+    labels: ["i18n", "marketing", "frontend"],
+    agentTimeMinutes: 90,
+    tokenCostUsd: 1.80,
+    createdBy: { id: "daniel", label: "Daniel", kind: "human" },
+    lastUpdatedBy: { id: "mh-mkt", label: "Marketing Agent", kind: "agent" },
+    activity: [
+      {
+        id: "mh-202-a-1",
+        type: "created",
+        actorId: "daniel",
+        actorType: "human",
+        actorLabel: "Daniel",
+        timestamp: "2026-04-18T09:00:00Z",
+        description: "filed after the quarterly review.",
+      },
+      {
+        id: "mh-202-a-2",
+        type: "commit_pushed",
+        actorId: "mh-mkt",
+        actorType: "agent",
+        actorLabel: "Marketing Agent",
+        timestamp: "2026-04-18T16:20:00Z",
+        description: "added ES strings + locale switch.",
+        meta: {
+          commitSha: "ab14e798c0d52344",
+          files: ["lib/i18n/es.json", "components/forms/QuoteForm.tsx"],
+        },
+      },
+      {
+        id: "mh-202-a-3",
+        type: "review_requested",
+        actorId: "mh-mkt",
+        actorType: "agent",
+        actorLabel: "Marketing Agent",
+        timestamp: "2026-04-19T11:00:00Z",
+        description: "requested final review from Daniel.",
+      },
+    ],
+  },
+  {
+    id: "mh-203",
+    code: "MH-203",
+    title: "Lead notification — SMS + email retry",
+    subtitle: "Some leads not reaching the team",
+    description: "Wire SMS as primary, email as fallback after 5min no-ack.",
+    status: "queued",
+    assigneeAgentId: "mh-ceo",
+    assigneeLabel: "CEO",
+    assigneeColor: "brass",
+    costSoFar: 0,
+    createdAt: "2026-04-19T08:00:00Z",
+    priority: "p2",
+    labels: ["notifications", "ops"],
+    agentTimeMinutes: 0,
+    tokenCostUsd: 0,
+  },
+];
+
+const flaglerIssues: Issue[] = [
+  {
+    id: "fb-301",
+    code: "FB-301",
+    title: "Guest welcome message — automate per-listing intro",
+    subtitle: "Concierge sends a manual message every check-in",
+    description: `## Goal
+
+Generate a personalized welcome message at check-in time, draw from the listing's amenities + neighborhood guide.
+
+## Trigger
+
+- Cron at booking_check_in_at - 2h
+- Sends via Airbnb message API + SMS backup
+
+## Template
+
+\`\`\`
+Hi {firstName}! Welcome to {listingName}. The keypad code is {code}.
+Wifi: {ssid} / {pass}. Coffee is in the cabinet to the left of the sink.
+{neighborhoodTip}
+\`\`\``,
+    status: "in-progress",
+    assigneeAgentId: "fb-g",
+    assigneeLabel: "G",
+    assigneeColor: "success",
+    costSoFar: 0.80,
+    createdAt: "2026-04-18T08:00:00Z",
+    updatedAt: "2026-04-19T09:24:00Z",
+    priority: "p1",
+    labels: ["concierge", "automation", "guest-experience"],
+    agentTimeMinutes: 95,
+    tokenCostUsd: 1.90,
+    createdBy: { id: "daniel", label: "Daniel", kind: "human" },
+    lastUpdatedBy: { id: "fb-g", label: "Guest Concierge", kind: "agent" },
+    activity: [
+      {
+        id: "fb-301-a-1",
+        type: "created",
+        actorId: "daniel",
+        actorType: "human",
+        actorLabel: "Daniel",
+        timestamp: "2026-04-18T08:00:00Z",
+        description: "filed after a slow booking week.",
+      },
+      {
+        id: "fb-301-a-2",
+        type: "commented",
+        actorId: "fb-g",
+        actorType: "agent",
+        actorLabel: "Guest Concierge",
+        timestamp: "2026-04-18T08:42:00Z",
+        description: "noted prior context.",
+        meta: {
+          comment:
+            "I have ~40 prior welcome messages in memory. Will use those as voice samples.",
+        },
+      },
+      {
+        id: "fb-301-a-3",
+        type: "commit_pushed",
+        actorId: "fb-g",
+        actorType: "agent",
+        actorLabel: "Guest Concierge",
+        timestamp: "2026-04-19T09:24:00Z",
+        description: "wired the cron + template renderer.",
+        meta: {
+          commitSha: "5c4e1b09a23a4471",
+          files: [
+            "jobs/welcome-cron.ts",
+            "lib/messages/welcome-template.ts",
+          ],
+        },
+      },
+    ],
+    codeChanges: [
+      {
+        filename: "lib/messages/welcome-template.ts",
+        status: "A",
+        linesAdded: 42,
+        linesRemoved: 0,
+        diffSnippet: `--- /dev/null
++++ b/lib/messages/welcome-template.ts
+@@ -0,0 +1,42 @@
++import type { Booking, Listing } from "@/lib/types";
++
++export function renderWelcome(booking: Booking, listing: Listing): string {
++  const tip = pickNeighborhoodTip(listing.neighborhood);
++  return [
++    \`Hi \${booking.guestFirstName}! Welcome to \${listing.name}.\`,
++    \`The keypad code is \${booking.entryCode}.\`,
++    \`Wifi: \${listing.wifi.ssid} / \${listing.wifi.password}.\`,
++    \`Coffee is in the cabinet to the left of the sink.\`,
++    tip,
++  ].join(" ");
++}
++
++function pickNeighborhoodTip(neighborhood: string): string {
++  const tips: Record<string, string> = {
++    "flagler-beach":
++      "If you walk south on A1A about 10 minutes, there's a quiet jetty perfect for sunset.",
++    "palm-coast":
++      "The Hammock Beach trail behind the property is best at low tide.",
++  };
++  return tips[neighborhood] ?? "Reach out anytime — I respond within 90 seconds.";
++}`,
+      },
+    ],
+  },
+  {
+    id: "fb-302",
+    code: "FB-302",
+    title: "Pricing — auto-adjust for local events",
+    subtitle: "Daytona Bike Week + spring break weekends",
+    description: "Pull the local events calendar; bump nightly rate +25-40% for high-demand windows.",
+    status: "queued",
+    assigneeAgentId: "fb-h",
+    assigneeLabel: "H",
+    assigneeColor: "success",
+    costSoFar: 0,
+    createdAt: "2026-04-19T07:00:00Z",
+    priority: "p2",
+    labels: ["pricing", "automation", "revenue"],
+    agentTimeMinutes: 0,
+    tokenCostUsd: 0,
+  },
+];
+
+const charge2goIssues: Issue[] = [
+  {
+    id: "c2g-401",
+    code: "C2G-401",
+    title: "Charger fleet API — heartbeat detection",
+    subtitle: "13 chargers reporting 'unknown' status",
+    description: `## Symptom
+
+13 of 87 chargers in the fleet show \`status: unknown\` in the dashboard. Customers can't see availability.
+
+## Root cause (suspected)
+
+The OCPP heartbeat interval was changed from 60s to 300s in last week's firmware push. Our backend assumes anything older than 90s is offline.
+
+## Fix
+
+- Bump the staleness threshold to 360s
+- Surface a \`lastHeartbeatAt\` timestamp in the dashboard
+- Alert on >5min of silence`,
+    status: "in-progress",
+    assigneeAgentId: "c2g-be",
+    assigneeLabel: "BE",
+    assigneeColor: "teal",
+    costSoFar: 6.80,
+    createdAt: "2026-04-17T15:00:00Z",
+    updatedAt: "2026-04-19T11:30:00Z",
+    priority: "p0",
+    labels: ["backend", "ops", "fleet", "p0"],
+    agentTimeMinutes: 165,
+    tokenCostUsd: 3.30,
+    createdBy: { id: "daniel", label: "Daniel", kind: "human" },
+    lastUpdatedBy: { id: "c2g-be", label: "Backend Agent", kind: "agent" },
+    activity: [
+      {
+        id: "c2g-401-a-1",
+        type: "created",
+        actorId: "daniel",
+        actorType: "human",
+        actorLabel: "Daniel",
+        timestamp: "2026-04-17T15:00:00Z",
+        description: "filed after the ops dashboard showed gaps.",
+      },
+      {
+        id: "c2g-401-a-2",
+        type: "assigned",
+        actorId: "c2g-ceo",
+        actorType: "agent",
+        actorLabel: "CEO Agent",
+        timestamp: "2026-04-17T15:14:00Z",
+        description: "routed to Backend Agent.",
+      },
+      {
+        id: "c2g-401-a-3",
+        type: "commented",
+        actorId: "c2g-be",
+        actorType: "agent",
+        actorLabel: "Backend Agent",
+        timestamp: "2026-04-17T17:32:00Z",
+        description: "narrowed root cause.",
+        meta: {
+          comment:
+            "Firmware v2.4.1 changed default heartbeat to 5min. Our threshold is 90s — that's the gap.",
+        },
+      },
+      {
+        id: "c2g-401-a-4",
+        type: "commit_pushed",
+        actorId: "c2g-be",
+        actorType: "agent",
+        actorLabel: "Backend Agent",
+        timestamp: "2026-04-18T10:18:00Z",
+        description: "bumped staleness threshold + added timestamp to UI.",
+        meta: {
+          commitSha: "73a4f12cd905b011",
+          files: [
+            "server/fleet/health.ts",
+            "components/fleet/StatusBadge.tsx",
+          ],
+        },
+      },
+      {
+        id: "c2g-401-a-5",
+        type: "commit_pushed",
+        actorId: "c2g-ops",
+        actorType: "agent",
+        actorLabel: "DevOps Agent",
+        timestamp: "2026-04-18T14:42:00Z",
+        description: "wired PagerDuty alert for >5min silence.",
+        meta: {
+          commitSha: "e32c1a8b4f97d042",
+          files: ["infra/pagerduty/services.tf"],
+        },
+      },
+      {
+        id: "c2g-401-a-6",
+        type: "status_changed",
+        actorId: "c2g-be",
+        actorType: "agent",
+        actorLabel: "Backend Agent",
+        timestamp: "2026-04-19T11:30:00Z",
+        description: "moved to in-progress for monitoring window.",
+        meta: { fromStatus: "review", toStatus: "in-progress" },
+      },
+    ],
+    codeChanges: [
+      {
+        filename: "server/fleet/health.ts",
+        status: "M",
+        linesAdded: 21,
+        linesRemoved: 4,
+        diffSnippet: `--- a/server/fleet/health.ts
++++ b/server/fleet/health.ts
+@@ -1,10 +1,27 @@
+-const STALE_AFTER_MS = 90_000;
++const STALE_AFTER_MS = 360_000;
+
+ export function chargerHealth(charger: Charger): "online" | "offline" | "unknown" {
+   const last = charger.lastHeartbeatAt;
+-  if (!last) return "unknown";
+-  const age = Date.now() - new Date(last).getTime();
++  if (!last) return "unknown";
++
++  const age = Date.now() - new Date(last).getTime();
+   if (age > STALE_AFTER_MS) return "offline";
+   return "online";
+ }
++
++export function heartbeatTelemetry(charger: Charger) {
++  return {
++    chargerId: charger.id,
++    lastHeartbeatAt: charger.lastHeartbeatAt,
++    ageSec: charger.lastHeartbeatAt
++      ? Math.floor((Date.now() - new Date(charger.lastHeartbeatAt).getTime()) / 1000)
++      : null,
++  };
++}`,
+      },
+    ],
+  },
+  {
+    id: "c2g-402",
+    code: "C2G-402",
+    title: "Stripe Connect — payouts to charger hosts",
+    subtitle: "Hosts haven't been paid yet · revenue blocker",
+    description: `Onboard charger hosts to Stripe Connect Express. Need to handle:
+
+- Onboarding link generation
+- KYC redirect
+- Webhook for \`account.updated\`
+- Payout schedule (weekly, Mondays)`,
+    status: "in-progress",
+    assigneeAgentId: "c2g-be",
+    assigneeLabel: "BE",
+    assigneeColor: "teal",
+    costSoFar: 4.20,
+    createdAt: "2026-04-18T08:30:00Z",
+    priority: "p1",
+    labels: ["payments", "backend", "stripe"],
+    agentTimeMinutes: 110,
+    tokenCostUsd: 2.20,
+  },
+  {
+    id: "c2g-403",
+    code: "C2G-403",
+    title: "Map filter — only show available chargers",
+    subtitle: "Toggle in the map header",
+    description: "Add a quick filter on the map view to hide offline + occupied chargers.",
+    status: "queued",
+    assigneeAgentId: "c2g-fe",
+    assigneeLabel: "FE",
+    assigneeColor: "teal",
+    costSoFar: 0,
+    createdAt: "2026-04-19T08:00:00Z",
+    priority: "p3",
+    labels: ["frontend", "ux"],
+    agentTimeMinutes: 0,
+    tokenCostUsd: 0,
+  },
+];
+
+const minariIssues: Issue[] = [
+  {
+    id: "mn-501",
+    code: "MN-501",
+    title: "Client portal — invoice PDF generation",
+    subtitle: "Currently sent via email attachment by hand",
+    description: `## Goal
+
+Generate downloadable PDF invoices in the client portal. Should match the existing email template.
+
+## Stack
+
+- React PDF (\`@react-pdf/renderer\`) for layout
+- Stored in S3 with signed URL
+- Trigger on invoice.created webhook
+
+## Template fields
+
+- Logo + company info (header)
+- Line items with quantity, unit price, subtotal
+- Tax breakdown (FL state)
+- Total + payment instructions`,
+    status: "in-progress",
+    assigneeAgentId: "mn-be",
+    assigneeLabel: "BE",
+    assigneeColor: "teal",
+    costSoFar: 3.20,
+    createdAt: "2026-04-17T11:00:00Z",
+    updatedAt: "2026-04-19T10:00:00Z",
+    priority: "p1",
+    labels: ["backend", "billing", "pdf"],
+    agentTimeMinutes: 130,
+    tokenCostUsd: 2.60,
+    createdBy: { id: "daniel", label: "Daniel", kind: "human" },
+    lastUpdatedBy: { id: "mn-be", label: "Backend Agent", kind: "agent" },
+    activity: [
+      {
+        id: "mn-501-a-1",
+        type: "created",
+        actorId: "daniel",
+        actorType: "human",
+        actorLabel: "Daniel",
+        timestamp: "2026-04-17T11:00:00Z",
+        description: "asked for this after a client requested it.",
+      },
+      {
+        id: "mn-501-a-2",
+        type: "commit_pushed",
+        actorId: "mn-be",
+        actorType: "agent",
+        actorLabel: "Backend Agent",
+        timestamp: "2026-04-18T13:45:00Z",
+        description: "scaffolded the PDF generator.",
+        meta: {
+          commitSha: "fa19c8e30b4d2541",
+          files: [
+            "lib/pdf/invoice.tsx",
+            "server/jobs/invoice-pdf.ts",
+          ],
+        },
+      },
+      {
+        id: "mn-501-a-3",
+        type: "commented",
+        actorId: "daniel",
+        actorType: "human",
+        actorLabel: "Daniel",
+        timestamp: "2026-04-18T17:00:00Z",
+        description: "left feedback.",
+        meta: {
+          comment:
+            "Looks good. Can we add a 'Pay online' QR code that links to Stripe checkout?",
+        },
+      },
+      {
+        id: "mn-501-a-4",
+        type: "commit_pushed",
+        actorId: "mn-be",
+        actorType: "agent",
+        actorLabel: "Backend Agent",
+        timestamp: "2026-04-19T10:00:00Z",
+        description: "added QR code for Stripe checkout link.",
+        meta: {
+          commitSha: "8c4e210bda904477",
+          files: ["lib/pdf/invoice.tsx"],
+        },
+      },
+    ],
+    codeChanges: [
+      {
+        filename: "lib/pdf/invoice.tsx",
+        status: "A",
+        linesAdded: 64,
+        linesRemoved: 0,
+        diffSnippet: `--- /dev/null
++++ b/lib/pdf/invoice.tsx
+@@ -0,0 +1,64 @@
++import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
++import QRCode from "qrcode";
++
++const styles = StyleSheet.create({
++  page: { padding: 36, fontFamily: "Helvetica" },
++  header: { flexDirection: "row", justifyContent: "space-between", marginBottom: 24 },
++  total: { fontSize: 18, fontWeight: 700, marginTop: 24 },
++});
++
++export function InvoicePDF({ invoice, qrDataUrl }: Props) {
++  return (
++    <Document>
++      <Page size="A4" style={styles.page}>
++        <View style={styles.header}>
++          <Text>Minari Solutions</Text>
++          <Text>#{invoice.number}</Text>
++        </View>
++        {invoice.lineItems.map((item) => (
++          <View key={item.id}>
++            <Text>{item.description}</Text>
++            <Text>{formatMoney(item.amount)}</Text>
++          </View>
++        ))}
++        <Text style={styles.total}>Total: {formatMoney(invoice.total)}</Text>
++        <Image src={qrDataUrl} style={{ width: 80, height: 80, marginTop: 24 }} />
++      </Page>
++    </Document>
++  );
++}`,
+      },
+    ],
+  },
+  {
+    id: "mn-502",
+    code: "MN-502",
+    title: "API rate limiting — per-tenant quota",
+    subtitle: "One client is hammering the public endpoints",
+    description: "Implement per-tenant token bucket. Defaults: 60 req/min, 5000 req/day.",
+    status: "queued",
+    assigneeAgentId: "mn-be",
+    assigneeLabel: "BE",
+    assigneeColor: "teal",
+    costSoFar: 0,
+    createdAt: "2026-04-19T08:00:00Z",
+    priority: "p1",
+    labels: ["backend", "api", "ops"],
+    agentTimeMinutes: 0,
+    tokenCostUsd: 0,
+  },
+];
+
 // ───── Companies ─────
 export const seedCompanies: Company[] = [
   {
@@ -3146,7 +4034,7 @@ export const seedCompanies: Company[] = [
     agents: [mkCEO("mt-ceo"), mkFrontend("mt-fe"), mkBackend("mt-be"), mkQA("mt-qa")],
     humans: [daniel],
     pipelines: [],
-    issues: [],
+    issues: multiTopupIssues,
     memories: [],
     streamItems: emptyStream("mt"),
     todaySpend: 14.20,
@@ -3169,7 +4057,7 @@ export const seedCompanies: Company[] = [
     agents: [mkCEO("mh-ceo"), mkMarketing("mh-mkt"), mkFrontend("mh-fe"), mkSEO("mh-seo"), mkQA("mh-qa")],
     humans: [daniel],
     pipelines: [],
-    issues: [],
+    issues: mhIssues,
     memories: [],
     streamItems: emptyStream("mh"),
     todaySpend: 6.40,
@@ -3193,7 +4081,7 @@ export const seedCompanies: Company[] = [
     agents: [mkCEO("fb-ceo"), mkConcierge("fb-g", "Guest Concierge"), mkConcierge("fb-h", "Host Assistant")],
     humans: [daniel],
     pipelines: [],
-    issues: [],
+    issues: flaglerIssues,
     memories: [],
     streamItems: emptyStream("fb"),
     todaySpend: 1.80,
@@ -3217,7 +4105,7 @@ export const seedCompanies: Company[] = [
     agents: [mkCEO("c2g-ceo"), mkFrontend("c2g-fe"), mkBackend("c2g-be"), mkDevOps("c2g-ops"), mkSEO("c2g-seo")],
     humans: [daniel],
     pipelines: [],
-    issues: [],
+    issues: charge2goIssues,
     memories: [],
     streamItems: emptyStream("c2g"),
     todaySpend: 12.10,
@@ -3240,7 +4128,7 @@ export const seedCompanies: Company[] = [
     agents: [mkCEO("mn-ceo"), mkBackend("mn-be")],
     humans: [daniel],
     pipelines: [],
-    issues: [],
+    issues: minariIssues,
     memories: [],
     streamItems: emptyStream("mn"),
     todaySpend: 3.20,
@@ -3561,7 +4449,28 @@ export function buildEVStationFinderCompany(): Company {
       code: "EVSF-001",
       title: "Research: Florida EV owner pain points",
       subtitle: "Discovery · 10 interviews target · ES + EN",
-      description: "Surface top 3 unmet needs for range anxiety on long FL routes.",
+      description: `## Goal
+
+Run 10 user interviews with Florida EV owners (mix of Tesla, Ford Lightning, Hyundai Ioniq 5) to surface the top 3 unmet needs around range anxiety on long routes.
+
+## Recruiting
+
+- 5 from Charge2Go's existing customer base
+- 3 from local EV meetups (Orlando, Miami)
+- 2 from Reddit r/electricvehicles FL flair
+
+## Interview script
+
+- Opening: tell me about your last long trip (>200mi)
+- Probe: how do you decide where to charge?
+- Probe: what makes you nervous mid-trip?
+- Closing: if you had a magic wand, what would the app do?
+
+## Success criteria
+
+- 10 interviews completed by **Apr 28**
+- Bilingual (5 ES, 5 EN)
+- Synthesized into top-3 themes with verbatim quotes`,
       status: "in-progress",
       assigneeAgentId: "evsf-ceo",
       assigneeLabel: "CEO",
@@ -3569,10 +4478,67 @@ export function buildEVStationFinderCompany(): Company {
       pipelineId: "p-evsf-discovery",
       costSoFar: 0.04,
       createdAt: "2026-04-18T12:00:00Z",
+      updatedAt: "2026-04-19T11:20:00Z",
       priority: "p1",
       labels: ["discovery", "research", "ux"],
       agentTimeMinutes: 60,
       tokenCostUsd: 1.20,
+      createdBy: { id: "daniel", label: "Daniel", kind: "human" },
+      lastUpdatedBy: { id: "evsf-ceo", label: "CEO Agent", kind: "agent" },
+      relatedTo: ["EVSF-003"],
+      activity: [
+        {
+          id: "evsf-001-a-1",
+          type: "created",
+          actorId: "daniel",
+          actorType: "human",
+          actorLabel: "Daniel",
+          timestamp: "2026-04-18T12:00:00Z",
+          description: "filed at company creation.",
+        },
+        {
+          id: "evsf-001-a-2",
+          type: "commented",
+          actorId: "evsf-ceo",
+          actorType: "agent",
+          actorLabel: "CEO Agent",
+          timestamp: "2026-04-18T12:18:00Z",
+          description: "loaded prior context.",
+          meta: {
+            comment:
+              "Engram has 47 memories from Charge2Go interviews. Reusing the recruitment script.",
+          },
+        },
+        {
+          id: "evsf-001-a-3",
+          type: "commit_pushed",
+          actorId: "evsf-ceo",
+          actorType: "agent",
+          actorLabel: "CEO Agent",
+          timestamp: "2026-04-19T08:42:00Z",
+          description: "drafted recruitment scripts (ES + EN).",
+          meta: {
+            commitSha: "1a4c92e8b07d3010",
+            files: [
+              "research/recruit-en.md",
+              "research/recruit-es.md",
+            ],
+          },
+        },
+        {
+          id: "evsf-001-a-4",
+          type: "commented",
+          actorId: "evsf-ceo",
+          actorType: "agent",
+          actorLabel: "CEO Agent",
+          timestamp: "2026-04-19T11:20:00Z",
+          description: "posted progress.",
+          meta: {
+            comment:
+              "3 interviews scheduled for this week. First one Tuesday 4pm with a Tesla owner from Orlando.",
+          },
+        },
+      ],
     },
     {
       id: "evsf-002",
@@ -3597,7 +4563,32 @@ export function buildEVStationFinderCompany(): Company {
       code: "EVSF-003",
       title: "Weather + elevation-aware range estimator",
       subtitle: "Core differentiator · physics model",
-      description: "Adjust remaining range using NOAA wind + 10m elevation DEM.",
+      description: `## Why this is the wedge
+
+Every other charger map shows the *nominal* remaining range. The real number depends on **wind, temperature, elevation, and load**. Closing this gap is our reason to exist.
+
+## Inputs
+
+- **NOAA HRRR** — hourly wind + temperature forecast, 3km grid
+- **USGS 1/3 arc-second DEM** — elevation, ~10m resolution
+- **Vehicle profile** — battery curve from EVSF-006
+
+## Model (rough)
+
+\`\`\`ts
+function adjustedRange(km: number, route: Route, vehicle: Vehicle) {
+  const headwindDrag = computeHeadwindDrag(route, vehicle);
+  const elevationCost = computeElevationCost(route, vehicle);
+  const tempEfficiency = batteryTempCurve(vehicle, route.avgTemp);
+  return km * tempEfficiency - headwindDrag - elevationCost;
+}
+\`\`\`
+
+## Acceptance
+
+- Predicted vs actual energy use within ±8% on a Miami → Orlando test trip
+- < 1.2s P95 latency on the route endpoint
+- Works offline using last cached forecast (degraded mode)`,
       status: "queued",
       assigneeAgentId: "evsf-be",
       assigneeLabel: "BE",
@@ -3605,10 +4596,52 @@ export function buildEVStationFinderCompany(): Company {
       pipelineId: "p-evsf-mvp",
       costSoFar: 0,
       createdAt: "2026-04-18T12:00:00Z",
+      updatedAt: "2026-04-18T13:30:00Z",
       priority: "p0",
-      labels: ["backend", "ml", "core"],
+      labels: ["backend", "ml", "core", "p0"],
       agentTimeMinutes: 0,
       tokenCostUsd: 0,
+      createdBy: { id: "daniel", label: "Daniel", kind: "human" },
+      lastUpdatedBy: { id: "evsf-ceo", label: "CEO Agent", kind: "agent" },
+      blocks: ["EVSF-007"],
+      relatedTo: ["EVSF-001", "EVSF-006"],
+      activity: [
+        {
+          id: "evsf-003-a-1",
+          type: "created",
+          actorId: "daniel",
+          actorType: "human",
+          actorLabel: "Daniel",
+          timestamp: "2026-04-18T12:00:00Z",
+          description: "filed as the core differentiator at company creation.",
+        },
+        {
+          id: "evsf-003-a-2",
+          type: "commented",
+          actorId: "evsf-ceo",
+          actorType: "agent",
+          actorLabel: "CEO Agent",
+          timestamp: "2026-04-18T12:32:00Z",
+          description: "shortlisted weather APIs.",
+          meta: {
+            comment:
+              "NOAA HRRR is free and 3km. OpenWeather is friendlier API but coarser. Going with NOAA for the wedge.",
+          },
+        },
+        {
+          id: "evsf-003-a-3",
+          type: "commented",
+          actorId: "salvador",
+          actorType: "human",
+          actorLabel: "Salvador",
+          timestamp: "2026-04-18T13:30:00Z",
+          description: "left a heads-up.",
+          meta: {
+            comment:
+              "Battery curve modeling can get deep fast. Start with one vehicle (Tesla M3 LR) and validate the model before generalizing.",
+          },
+        },
+      ],
     },
     {
       id: "evsf-004",
