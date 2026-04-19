@@ -152,7 +152,7 @@ function computePositions(
         return;
       }
       const angle = (i / n) * Math.PI * 2 - Math.PI / 2;
-      const r = 110 + (i % 2) * 28;
+      const r = 110 + (i % 2) * 32;
       result[m.id] = {
         x: center.x + Math.cos(angle) * r,
         y: center.y + Math.sin(angle) * r,
@@ -162,26 +162,48 @@ function computePositions(
   return result;
 }
 
-function computeEdges(memories: Memory[]): Edge[] {
-  const edges: Edge[] = [];
+type MemoryEdgeKind = "thread" | "tag" | "agent";
+
+function computeEdges(memories: Memory[]): (Edge & { data: { kind: MemoryEdgeKind } })[] {
+  const edges: (Edge & { data: { kind: MemoryEdgeKind } })[] = [];
   for (let i = 0; i < memories.length; i++) {
     for (let j = i + 1; j < memories.length; j++) {
       const a = memories[i];
       const b = memories[j];
-      const tagOverlap = a.tags.filter((t) => b.tags.includes(t)).length;
       const samePipeline =
-        a.pipelineRef && b.pipelineRef && a.pipelineRef.id === b.pipelineRef.id;
-      if (tagOverlap >= 2 || samePipeline) {
-        edges.push({
-          id: `${a.id}__${b.id}`,
-          source: a.id,
-          target: b.id,
-        });
-      }
+        !!a.pipelineRef &&
+        !!b.pipelineRef &&
+        a.pipelineRef.id === b.pipelineRef.id;
+      const tagOverlap = a.tags.filter((t) => b.tags.includes(t)).length;
+      const sameAgent = a.savedBy === b.savedBy;
+
+      let kind: MemoryEdgeKind | null = null;
+      if (samePipeline) kind = "thread";
+      else if (tagOverlap >= 2) kind = "tag";
+      else if (sameAgent) kind = "agent";
+      if (!kind) continue;
+
+      edges.push({
+        id: `${a.id}__${b.id}__${kind}`,
+        source: a.id,
+        target: b.id,
+        data: { kind },
+      });
     }
   }
   return edges;
 }
+
+const EDGE_WIDTH: Record<MemoryEdgeKind, number> = {
+  thread: 1.4,
+  tag: 1,
+  agent: 0.8,
+};
+const EDGE_OPACITY: Record<MemoryEdgeKind, number> = {
+  thread: 0.7,
+  tag: 0.5,
+  agent: 0.25,
+};
 
 function formatCreated(iso: string): string {
   try {
@@ -203,11 +225,11 @@ export function MemoryGraph({
   onSelect: (id: string | null) => void;
 }) {
   const nodes = useMemo<MemoryNodeType[]>(() => {
-    const positions = computePositions(memories);
+    const fallback = computePositions(memories);
     return memories.map((m) => ({
       id: m.id,
       type: "memory",
-      position: positions[m.id] ?? { x: 0, y: 0 },
+      position: m.position ?? fallback[m.id] ?? { x: 0, y: 0 },
       data: {
         memory: m,
         tooltip: m.title,
@@ -225,12 +247,18 @@ export function MemoryGraph({
       const connected =
         selectedId != null && (e.source === selectedId || e.target === selectedId);
       const dimmed = !matchedIds.has(e.source) || !matchedIds.has(e.target);
+      const kind = e.data.kind;
       return {
         ...e,
+        className: connected ? "memory-edge-active" : undefined,
         style: {
           stroke: connected ? EDGE_STROKE_SELECTED : EDGE_STROKE_DEFAULT,
-          strokeWidth: connected ? 1.4 : 1,
-          opacity: dimmed ? 0.12 : connected ? 0.95 : 0.55,
+          strokeWidth: connected ? 1.6 : EDGE_WIDTH[kind],
+          opacity: dimmed
+            ? 0.08
+            : connected
+              ? 0.95
+              : EDGE_OPACITY[kind],
         },
       };
     });

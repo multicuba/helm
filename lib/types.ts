@@ -167,6 +167,7 @@ export interface Memory {
   issueRef?: { code: string; title: string };
   referencedCount?: number;
   lastAccessedAt?: string;
+  position?: { x: number; y: number };
 }
 
 export type SkillCategory =

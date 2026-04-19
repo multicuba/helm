@@ -998,7 +998,56 @@ const emptyStream = (name: string): StreamItem[] => [
 ];
 
 // ───── Memories ─────
-const legacyMemories: Memory[] = [
+const MEMORY_CLUSTER_CENTERS: Record<
+  Memory["type"],
+  { x: number; y: number }
+> = {
+  decision: { x: -280, y: -190 },
+  architecture: { x: 280, y: -190 },
+  learning: { x: -280, y: 210 },
+  bug: { x: 280, y: 210 },
+};
+
+function memoryPosition(
+  type: Memory["type"],
+  typeIndex: number,
+  typeTotal: number
+): { x: number; y: number } {
+  const center = MEMORY_CLUSTER_CENTERS[type];
+  if (typeTotal === 1) return { ...center };
+  const angle = (typeIndex / typeTotal) * Math.PI * 2 - Math.PI / 2;
+  const r = 110 + (typeIndex % 2) * 32;
+  return {
+    x: Math.round(center.x + Math.cos(angle) * r),
+    y: Math.round(center.y + Math.sin(angle) * r),
+  };
+}
+
+function assignMemoryPositions(
+  memories: Omit<Memory, "position">[]
+): Memory[] {
+  const totals: Record<Memory["type"], number> = {
+    decision: 0,
+    bug: 0,
+    architecture: 0,
+    learning: 0,
+  };
+  memories.forEach((m) => {
+    totals[m.type] += 1;
+  });
+  const seen: Record<Memory["type"], number> = {
+    decision: 0,
+    bug: 0,
+    architecture: 0,
+    learning: 0,
+  };
+  return memories.map((m) => {
+    const i = seen[m.type]++;
+    return { ...m, position: memoryPosition(m.type, i, totals[m.type]) };
+  });
+}
+
+const legacyMemoriesRaw: Omit<Memory, "position">[] = [
   {
     id: "m-1",
     title: "Kelly criterion vs modified Sharpe for risk scoring",
@@ -1149,7 +1198,188 @@ const legacyMemories: Memory[] = [
     referencedCount: 22,
     lastAccessedAt: "2026-04-18T22:30:00Z",
   },
+  {
+    id: "m-13",
+    title: "Score recompute cadence: nightly batch + intraday deltas",
+    type: "decision",
+    content:
+      "Full rescore runs at 02:30 UTC; intraday ticks update only the volatility band and exposure ratio, not the core Sharpe. Keeps Postgres CPU under 40% during market hours and avoids flicker in Bryan's portfolio view.",
+    savedBy: "CEO Agent",
+    createdAt: "2026-04-05T14:00:00Z",
+    tags: ["profiler", "performance", "risk"],
+    pipelineRef: { id: "pl-profiler", label: "Bryan AI — Profiler v3" },
+    referencedCount: 9,
+    lastAccessedAt: "2026-04-18T20:10:00Z",
+  },
+  {
+    id: "m-14",
+    title: "MFA required for accounts above $50k AUM",
+    type: "decision",
+    content:
+      "Threshold came from Salvador's compliance risk sheet. TOTP mandatory, WebAuthn optional. Accounts below the line can opt in — UI nudges every 30 days but never blocks.",
+    savedBy: "Security Agent",
+    createdAt: "2026-04-04T11:00:00Z",
+    tags: ["auth", "security", "mfa"],
+    pipelineRef: { id: "pl-auth", label: "Auth: Clerk → NextAuth" },
+    referencedCount: 16,
+    lastAccessedAt: "2026-04-18T21:05:00Z",
+  },
+  {
+    id: "m-15",
+    title: "Session: 2h sliding window, 12h hard ceiling",
+    type: "decision",
+    content:
+      "Sliding session refreshes on any authenticated request; absolute cap of 12h forces re-auth once per trading day. Aligns with FINRA guidance and matches Schwab's defaults. Salvador approved.",
+    savedBy: "Security Agent",
+    createdAt: "2026-04-03T09:30:00Z",
+    tags: ["auth", "security", "session"],
+    pipelineRef: { id: "pl-auth", label: "Auth: Clerk → NextAuth" },
+    referencedCount: 11,
+    lastAccessedAt: "2026-04-18T15:40:00Z",
+  },
+  {
+    id: "m-16",
+    title: "iPad landscape: 3-column P&L + order ticket side panel",
+    type: "decision",
+    content:
+      "Portrait collapses to single-column; landscape keeps P&L, positions table, and a 320px order ticket. Decision driven by Bryan's screen usage — 82% landscape during market hours. Breakpoints locked at 1024px / 1366px.",
+    savedBy: "Frontend Agent",
+    createdAt: "2026-04-02T17:20:00Z",
+    tags: ["dashboard", "ipad", "layout"],
+    pipelineRef: { id: "pl-dashboard", label: "Dashboard — live P&L" },
+    referencedCount: 5,
+    lastAccessedAt: "2026-04-17T19:55:00Z",
+  },
+  {
+    id: "m-17",
+    title: "Scorer crashes on bond-only portfolios",
+    type: "bug",
+    content:
+      "NaN propagates when options exposure ratio denominator is zero. Patch: return baseline score with a flag when no equity/options present. Caught during paper-trade of a pure fixed-income profile.",
+    savedBy: "Backend Agent",
+    createdAt: "2026-04-06T10:00:00Z",
+    tags: ["profiler", "crash", "bonds"],
+    pipelineRef: { id: "pl-profiler", label: "Bryan AI — Profiler v3" },
+    issueRef: { code: "LT-278", title: "Scorer throws NaN on bond-only accounts" },
+    referencedCount: 6,
+    lastAccessedAt: "2026-04-18T11:15:00Z",
+  },
+  {
+    id: "m-18",
+    title: "Session cookie leaked via Vercel preview Referer header",
+    type: "bug",
+    content:
+      "Preview deploy had no password gate; outbound links to third-party charts forwarded Referer including session_id fragment. Fixed by (1) enabling preview password, (2) stripping session_id from URL hash client-side on load.",
+    savedBy: "Security Agent",
+    createdAt: "2026-04-03T13:45:00Z",
+    tags: ["auth", "security", "vercel"],
+    pipelineRef: { id: "pl-auth", label: "Auth: Clerk → NextAuth" },
+    issueRef: { code: "LT-266", title: "Preview deploy leaks session_id via Referer" },
+    referencedCount: 12,
+    lastAccessedAt: "2026-04-18T18:30:00Z",
+  },
+  {
+    id: "m-19",
+    title: "Event sourcing for portfolio history, 24h snapshots",
+    type: "architecture",
+    content:
+      "Every position change emits an event to portfolio_events. Nightly snapshot materializes to portfolio_state. Replay from any snapshot reconstructs exact history — essential for audit and performance attribution.",
+    savedBy: "Backend Agent",
+    createdAt: "2026-04-05T09:00:00Z",
+    tags: ["event-sourcing", "postgres", "audit"],
+    referencedCount: 13,
+    lastAccessedAt: "2026-04-18T14:00:00Z",
+  },
+  {
+    id: "m-20",
+    title: "Feature flags via Vercel Edge Config, 50ms TTL",
+    type: "architecture",
+    content:
+      "Sub-100ms reads at the edge. Fallback to last-known flags if edge misses. Flag changes propagate globally in under 10s. Don't put user-specific rules here — only global kill-switches.",
+    savedBy: "Backend Agent",
+    createdAt: "2026-04-04T16:00:00Z",
+    tags: ["vercel", "feature-flags", "performance"],
+    referencedCount: 7,
+    lastAccessedAt: "2026-04-17T10:20:00Z",
+  },
+  {
+    id: "m-21",
+    title: "Options-chain CDN cache, 30s TTL, varies by symbol",
+    type: "architecture",
+    content:
+      "Cloudflare Workers fronting the options vendor. 30s TTL during market hours, 5min after close. Cache key = symbol + expiry bucket. Cut vendor traffic 68% without noticeable staleness in the P&L panel.",
+    savedBy: "Backend Agent",
+    createdAt: "2026-04-03T15:30:00Z",
+    tags: ["options", "performance", "dashboard"],
+    pipelineRef: { id: "pl-dashboard", label: "Dashboard — live P&L" },
+    referencedCount: 10,
+    lastAccessedAt: "2026-04-18T13:45:00Z",
+  },
+  {
+    id: "m-22",
+    title: "Audit log: append-only Postgres, S3 cold after 90d",
+    type: "architecture",
+    content:
+      "All mutations write an append-only audit row (actor, action, before, after, timestamp). Rotate to S3 Glacier after 90 days. Read path for recent audits goes to hot table; historical lookup via Athena.",
+    savedBy: "Backend Agent",
+    createdAt: "2026-04-02T11:00:00Z",
+    tags: ["audit", "postgres", "security"],
+    referencedCount: 8,
+    lastAccessedAt: "2026-04-16T09:30:00Z",
+  },
+  {
+    id: "m-23",
+    title: "Workflow rules in YAML, hot-reload in dev",
+    type: "architecture",
+    content:
+      "Agent workflows declared in /workflows/*.yaml. Boot-time validation via Zod. Dev reloads on save; prod requires explicit deploy. Keeps non-engineers (ops, compliance) able to tweak routing without opening a PR.",
+    savedBy: "Backend Agent",
+    createdAt: "2026-04-01T14:15:00Z",
+    tags: ["workflow", "yaml", "architecture"],
+    referencedCount: 4,
+    lastAccessedAt: "2026-04-15T08:00:00Z",
+  },
+  {
+    id: "m-24",
+    title: "Analytics via dedicated Postgres read replica, 15s lag ok",
+    type: "architecture",
+    content:
+      "All heavy BI queries routed to replica.lt-prod.db. Primary stays <30% CPU. 15s replication lag is fine for analytics; anything needing sub-second freshness hits primary with a label override.",
+    savedBy: "Backend Agent",
+    createdAt: "2026-03-31T10:00:00Z",
+    tags: ["postgres", "analytics", "performance"],
+    referencedCount: 6,
+    lastAccessedAt: "2026-04-14T12:00:00Z",
+  },
+  {
+    id: "m-25",
+    title: "Chart library rule: Recharts only, never Chart.js",
+    type: "learning",
+    content:
+      "Chart.js pulls canvas + full chart types (~120KB gzipped). Recharts tree-shakes down to what you import. On the P&L panel we ship 14KB of Recharts vs ~95KB of Chart.js for the same visual. Locked in.",
+    savedBy: "Frontend Agent",
+    createdAt: "2026-04-05T18:00:00Z",
+    tags: ["chart", "dashboard", "bundle-size"],
+    pipelineRef: { id: "pl-dashboard", label: "Dashboard — live P&L" },
+    referencedCount: 9,
+    lastAccessedAt: "2026-04-18T12:10:00Z",
+  },
+  {
+    id: "m-26",
+    title: "OWASP ASVS Level 2 is the compliance bar",
+    type: "learning",
+    content:
+      "All user-facing services must pass ASVS L2 checks before promotion to prod. Security Agent runs the checklist on every pipeline; failures block the verify phase. L3 reserved for anything handling fund movement.",
+    savedBy: "Security Agent",
+    createdAt: "2026-04-02T09:00:00Z",
+    tags: ["security", "compliance", "auth"],
+    pipelineRef: { id: "pl-auth", label: "Auth: Clerk → NextAuth" },
+    referencedCount: 14,
+    lastAccessedAt: "2026-04-18T16:45:00Z",
+  },
 ];
+
+const legacyMemories: Memory[] = assignMemoryPositions(legacyMemoriesRaw);
 
 // ───── Skills (Knowledge) ─────
 const legacySkills: Skill[] = [
