@@ -1,14 +1,28 @@
 "use client";
 
 import { use, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { useCompaniesStore } from "@/lib/stores";
 import { MemoryHeader } from "@/components/memory/MemoryHeader";
-import { MemoryList } from "@/components/memory/MemoryList";
 import { MemoryDetail } from "@/components/memory/MemoryDetail";
 import {
   MemoryFilters,
   type MemoryTypeFilter,
 } from "@/components/memory/MemoryFilters";
+
+const MemoryGraph = dynamic(
+  () => import("@/components/memory/MemoryGraph").then((m) => m.MemoryGraph),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="font-serif italic text-text-tertiary text-[13px]">
+          Loading graph…
+        </div>
+      </div>
+    ),
+  }
+);
 
 export default function MemoryPage({
   params,
@@ -21,9 +35,7 @@ export default function MemoryPage({
   );
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<MemoryTypeFilter>("all");
-  const [selectedId, setSelectedId] = useState<string | null>(
-    company?.memories[0]?.id ?? null
-  );
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const memories = company?.memories ?? [];
 
@@ -51,7 +63,7 @@ export default function MemoryPage({
     });
   }, [memories, query, typeFilter]);
 
-  const selected = filtered.find((m) => m.id === selectedId) ?? filtered[0] ?? null;
+  const selected = memories.find((m) => m.id === selectedId) ?? null;
 
   if (!company) {
     return (
@@ -69,27 +81,26 @@ export default function MemoryPage({
     <div className="flex-1 min-w-0 bg-bg-page flex flex-col overflow-hidden">
       <MemoryHeader company={company} totalMemories={memories.length} />
 
-      <div className="flex-1 min-h-0 flex">
-        <aside className="w-[380px] border-r border-border-subtle bg-bg-page flex flex-col flex-shrink-0">
-          <MemoryFilters
-            query={query}
-            onQueryChange={setQuery}
-            typeFilter={typeFilter}
-            onTypeChange={setTypeFilter}
-            counts={counts}
-          />
-          <div className="flex-1 overflow-y-auto">
-            <MemoryList
-              memories={filtered}
-              selectedId={selected?.id ?? null}
-              onSelect={setSelectedId}
-            />
-          </div>
-        </aside>
+      <MemoryFilters
+        query={query}
+        onQueryChange={setQuery}
+        typeFilter={typeFilter}
+        onTypeChange={setTypeFilter}
+        counts={counts}
+      />
 
-        <div className="flex-1 min-w-0 overflow-y-auto">
-          <MemoryDetail memory={selected} company={company} />
+      <div className="flex-1 min-h-0 flex">
+        <div className="flex-1 min-w-0 relative">
+          <MemoryGraph
+            memories={filtered}
+            selectedId={selected?.id ?? null}
+            onSelect={setSelectedId}
+          />
         </div>
+
+        <aside className="w-[440px] border-l border-border-subtle bg-bg-page overflow-y-auto flex-shrink-0">
+          <MemoryDetail memory={selected} company={company} />
+        </aside>
       </div>
     </div>
   );
